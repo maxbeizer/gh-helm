@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 func Execute(ctx context.Context) error {
 	rootCmd.SetContext(ctx)
 	rootCmd.AddCommand(projectCmd)
+	rootCmd.AddCommand(managerCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(versionCmd)
 	return rootCmd.Execute()

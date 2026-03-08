@@ -204,6 +204,18 @@ schedule:
   prep: "0 8 * * *"         # 1-1 prep morning of scheduled meetings
 ```
 
+### Manager Agent Commands
+
+```bash
+max-ops manager init                    # Create manager-ops.yaml
+max-ops manager observe                 # One-shot observations
+max-ops manager prep <handle>           # 1-1 prep for a report
+max-ops manager pulse                   # Team health overview
+max-ops manager pillars                 # Show pillar definitions
+max-ops manager report <handle>         # Report card for a team member
+max-ops manager start --observe-interval 24h  # Continuous observe loop
+```
+
 ### What the Manager Agent Does
 
 **Continuous monitoring:**
