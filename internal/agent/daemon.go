@@ -16,6 +16,10 @@ import (
 	"github.com/maxbeizer/max-ops/internal/notifications"
 )
 
+type Logger interface {
+	Printf(format string, args ...any)
+}
+
 type DaemonOpts struct {
 	Interval             time.Duration
 	MaxPerHour           int
@@ -27,6 +31,7 @@ type DaemonOpts struct {
 	DryRun               bool
 	ProjectOwner         string
 	ProjectNumber        int
+	Logger               Logger
 }
 
 type failureEntry struct {
@@ -64,7 +69,11 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 	limiter := guardrails.NewRateLimiter(maxPerHour)
 	seen := make(map[string]bool)
 
-	log.Printf("project daemon started (interval: %s)", interval)
+	logf := log.Printf
+	if opts.Logger != nil {
+		logf = opts.Logger.Printf
+	}
+	logf("project daemon started (interval: %s)", interval)
 
 	for {
 		select {
@@ -73,7 +82,7 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 		case <-ticker.C:
 			items, err := fetchQueueItems(ctx, owner, project, status, opts.Label)
 			if err != nil {
-				log.Printf("poll error: %v", err)
+				logf("poll error: %v", err)
 				continue
 			}
 			for _, item := range items {
@@ -98,7 +107,11 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 		return err
 	}
 	if opts.DryRun {
-		log.Printf("dry run: would process %s#%d", item.Repo, item.Number)
+		if opts.Logger != nil {
+			opts.Logger.Printf("dry run: would process %s#%d", item.Repo, item.Number)
+		} else {
+			log.Printf("dry run: would process %s#%d", item.Repo, item.Number)
+		}
 		return nil
 	}
 

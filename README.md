@@ -217,6 +217,53 @@ max-ops manager report <handle>         # Report card for a team member
 max-ops manager start                   # Scheduled daemon (observe/pulse/prep)
 ```
 
+### Health Checks & Upgrades
+
+```bash
+max-ops doctor
+```
+
+Example output:
+
+```
+🏥 max-ops doctor — project health check
+
+  ✅ Config: max-ops.yaml found and valid
+  ✅ Source of Truth: docs/SOURCE_OF_TRUTH.md exists
+  ✅ Project Board: #25 accessible (42 items)
+  ⚠️  Labels: missing 'agent-ready'
+  ✅ DevContainer: .devcontainer/devcontainer.json configured
+  ⚠️  Notifications: webhook-url not configured
+  ✅ Auth: token has required scopes
+  ℹ️  State: .max-ops/ not found (first run?)
+
+  Result: 5 passed, 2 warnings, 0 failures
+  Run 'max-ops upgrade' to fix warnings automatically.
+```
+
+```bash
+max-ops upgrade
+```
+
+Example output:
+
+```
+🔄 max-ops upgrade
+
+  ✅ Created label: agent-ready
+  ✅ Created label: needs-attention
+  ⏭ Config: max-ops.yaml already up to date
+  ✅ Created: .devcontainer/devcontainer.json
+  ⏭ Source of Truth: already exists
+  ✅ Created: .max-ops/
+
+  3 changes applied, 2 skipped
+```
+
+### JSON Output
+
+Every command supports `--json` and `--jq` for machine-readable output.
+
 ### What the Manager Agent Does
 
 **Continuous monitoring:**

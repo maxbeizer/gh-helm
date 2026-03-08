@@ -26,7 +26,5 @@ var managerPulseCmd = &cobra.Command{
 
 func init() {
 	managerPulseCmd.Flags().String("since", "30d", "How far back to look (e.g. 30d, 720h)")
-	managerPulseCmd.Flags().Bool("json", false, "Output JSON")
-	managerPulseCmd.Flags().String("jq", "", "Filter JSON output with jq")
 	managerCmd.AddCommand(managerPulseCmd)
 }

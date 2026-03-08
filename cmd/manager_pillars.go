@@ -20,7 +20,5 @@ var managerPillarsCmd = &cobra.Command{
 }
 
 func init() {
-	managerPillarsCmd.Flags().Bool("json", false, "Output JSON")
-	managerPillarsCmd.Flags().String("jq", "", "Filter JSON output with jq")
 	managerCmd.AddCommand(managerPillarsCmd)
 }

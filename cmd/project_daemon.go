@@ -6,6 +6,7 @@ import (
 
 	"github.com/maxbeizer/max-ops/internal/agent"
 	"github.com/maxbeizer/max-ops/internal/config"
+	"github.com/maxbeizer/max-ops/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -53,9 +54,28 @@ var projectDaemonCmd = &cobra.Command{
 			ProjectNumber:        projectNumber,
 		}
 
-		fmt.Fprintf(cmd.OutOrStdout(), "project daemon started (interval: %s)\n", interval)
+		jsonFlag, _ := cmd.Flags().GetBool("json")
+		jqExpr, _ := cmd.Flags().GetString("jq")
+		if jsonFlag || jqExpr != "" {
+			out := output.New(cmd)
+			opts.Logger = jsonLogger{out: out}
+		} else {
+			fmt.Fprintf(cmd.OutOrStdout(), "project daemon started (interval: %s)\n", interval)
+		}
 		return agent.RunDaemon(cmd.Context(), cfg.Project, opts)
 	},
+}
+
+type jsonLogger struct {
+	out *output.Output
+}
+
+func (j jsonLogger) Printf(format string, args ...any) {
+	payload := map[string]any{
+		"time":    time.Now().Format(time.RFC3339),
+		"message": fmt.Sprintf(format, args...),
+	}
+	_ = j.out.Print(payload)
 }
 
 func init() {

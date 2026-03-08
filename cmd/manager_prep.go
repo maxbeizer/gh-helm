@@ -27,7 +27,5 @@ var managerPrepCmd = &cobra.Command{
 
 func init() {
 	managerPrepCmd.Flags().String("since", "14d", "How far back to look (e.g. 14d, 336h)")
-	managerPrepCmd.Flags().Bool("json", false, "Output JSON")
-	managerPrepCmd.Flags().String("jq", "", "Filter JSON output with jq")
 	managerCmd.AddCommand(managerPrepCmd)
 }

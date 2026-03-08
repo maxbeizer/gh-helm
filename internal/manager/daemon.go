@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+type Logger interface {
+	Printf(format string, args ...any)
+}
+
 type scheduleEntry struct {
 	Minute int
 	Hour   int
@@ -22,7 +26,7 @@ type scheduleSet struct {
 	Observe *scheduleEntry
 }
 
-func RunManagerDaemon(ctx context.Context, cfgConfigPath string) error {
+func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger Logger) error {
 	mgr, err := Load(cfgConfigPath)
 	if err != nil {
 		return err
@@ -36,20 +40,25 @@ func RunManagerDaemon(ctx context.Context, cfgConfigPath string) error {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
+	logf := log.Printf
+	if logger != nil {
+		logf = logger.Printf
+	}
+
 	lastRun := map[string]time.Time{}
-	log.Printf("manager daemon started")
+	logf("manager daemon started")
 
 	for {
 		now := time.Now()
 		if sched.Pulse != nil && sched.Pulse.Due(now) && !alreadyRan(lastRun, "pulse", now) {
 			if _, err := mgr.Pulse(ctx, PulseOptions{Since: "30d"}); err != nil {
-				log.Printf("pulse error: %v", err)
+				logf("pulse error: %v", err)
 			}
 			lastRun["pulse"] = now
 		}
 		if sched.Observe != nil && sched.Observe.Due(now) && !alreadyRan(lastRun, "observe", now) {
 			if _, err := mgr.Observe(ctx, ObserveOptions{Since: "7d"}); err != nil {
-				log.Printf("observe error: %v", err)
+				logf("observe error: %v", err)
 			}
 			lastRun["observe"] = now
 		}
@@ -59,7 +68,7 @@ func RunManagerDaemon(ctx context.Context, cfgConfigPath string) error {
 					continue
 				}
 				if _, err := mgr.Prep(ctx, PrepOptions{Since: "14d", Handle: member.Handle}); err != nil {
-					log.Printf("prep error for %s: %v", member.Handle, err)
+					logf("prep error for %s: %v", member.Handle, err)
 				}
 			}
 			lastRun["prep"] = now

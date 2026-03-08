@@ -41,7 +41,5 @@ func init() {
 	projectStartCmd.Flags().String("repo", "", "Repository owner/name")
 	projectStartCmd.Flags().String("model", "", "AI model")
 	projectStartCmd.Flags().Bool("dry-run", false, "Show plan without executing")
-	projectStartCmd.Flags().Bool("json", false, "Output as JSON")
-	projectStartCmd.Flags().String("jq", "", "Filter JSON output with jq expression")
 	projectCmd.AddCommand(projectStartCmd)
 }

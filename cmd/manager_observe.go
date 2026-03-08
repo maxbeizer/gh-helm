@@ -32,7 +32,5 @@ func init() {
 	managerObserveCmd.Flags().String("since", "7d", "How far back to look (e.g. 7d, 168h)")
 	managerObserveCmd.Flags().Bool("dry-run", false, "Show observations without posting")
 	managerObserveCmd.Flags().String("handle", "", "Observe a single handle")
-	managerObserveCmd.Flags().Bool("json", false, "Output JSON")
-	managerObserveCmd.Flags().String("jq", "", "Filter JSON output with jq")
 	managerCmd.AddCommand(managerObserveCmd)
 }

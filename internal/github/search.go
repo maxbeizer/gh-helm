@@ -18,6 +18,7 @@ type SearchItem struct {
 	CreatedAt     string  `json:"created_at"`
 	ClosedAt      string  `json:"closed_at"`
 	UpdatedAt     string  `json:"updated_at"`
+	Comments      int     `json:"comments"`
 	Body          string  `json:"body"`
 }
 

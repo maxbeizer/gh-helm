@@ -16,6 +16,13 @@ func Execute(ctx context.Context) error {
 	rootCmd.AddCommand(projectCmd)
 	rootCmd.AddCommand(managerCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(doctorCmd)
+	rootCmd.AddCommand(upgradeCmd)
 	rootCmd.AddCommand(versionCmd)
 	return rootCmd.Execute()
+}
+
+func init() {
+	rootCmd.PersistentFlags().Bool("json", false, "Output JSON")
+	rootCmd.PersistentFlags().String("jq", "", "Filter JSON output with jq")
 }
