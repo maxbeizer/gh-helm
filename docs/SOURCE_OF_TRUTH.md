@@ -6,11 +6,7 @@ Put autonomous agents on both sides of engineering work — one that does it, on
 
 ## Current Focus
 
-Core infrastructure is solid. Remaining work before real-world use:
-
-- Structured logging with levels
-- Atomic state file writes (race condition fix)
-- Integration testing with mocked `gh` CLI
+Core infrastructure complete. Ready for real-world use and feature development on open issues (#2, #3, #4).
 
 ## Key Decisions
 
@@ -21,6 +17,9 @@ Core infrastructure is solid. Remaining work before real-world use:
 - **2026-03-08**: GitHub CLI (`gh`) used as primary API interface — subprocess per call, trades perf for auth simplicity
 - **2026-03-08**: Pillar mapping uses multi-signal priority: labels > repos > file paths > keywords > AI inference
 - **2026-03-08**: Config versioning with integer `version` field — loaders validate and error with migration message
+- **2026-03-08**: Structured logging via `log/slog` with `--verbose` flag for debug output
+- **2026-03-08**: Atomic state writes via temp file + rename to prevent concurrent corruption
+- **2026-03-08**: `runGh` made injectable for testing via `RunGhFunc` package variable
 
 ## Architecture
 
@@ -42,16 +41,15 @@ Core infrastructure is solid. Remaining work before real-world use:
 - [x] Codespace cleanup (deferred delete after creation)
 - [x] Error handling hardened (swallowed errors → logged)
 - [x] Rate limiting reduced from 3s to 500ms
-- [ ] Structured logging with levels
-- [ ] Atomic state file writes (race condition fix)
+- [x] Structured logging with slog + --verbose flag
+- [x] Atomic state file writes (temp file + rename)
+- [x] Integration tests with mocked gh CLI (7 tests)
 
 ## Risks & Blockers
 
-- State files (`.helm/state.json`, `.helm/failures.json`) have race conditions under concurrent agents
-- No integration tests yet (unit tests cover pure logic only)
+- No end-to-end tests yet (would require a real GitHub project board)
 
 ## Next Up
 
-- Add structured logging (replace log.Printf with leveled logger)
-- Atomic state file writes (temp file + rename pattern)
-- Integration tests with mocked `gh` CLI output
+- Real-world testing against a live project
+- Feature work: issues #2 (hubber profiles), #3 (codespace on PR), #4 (reporting dashboard)
