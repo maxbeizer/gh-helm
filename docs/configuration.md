@@ -28,6 +28,11 @@ source-of-truth = "docs/SOURCE_OF_TRUTH.md"  # Living project goals document
 [filters]
 status = "Ready"                        # Project board status to watch
 labels = ["agent-ready"]                # Only claim issues with these labels
+
+[codespace]
+enabled = false                         # Auto-create Codespace on draft PR
+machine = "basicLinux32gb"              # Codespace machine type
+idle-timeout = "30m"                    # Auto-stop after idle
 ```
 
 ### Field Reference
@@ -46,6 +51,9 @@ labels = ["agent-ready"]                # Only claim issues with these labels
 | — | `source-of-truth` | no | `docs/SOURCE_OF_TRUTH.md` | Path to the project's source of truth document |
 | `filters` | `status` | no | — | Only claim items with this project board status |
 | `filters` | `labels` | no | — | Only claim issues with all of these labels |
+| `codespace` | `enabled` | no | `false` | Auto-create a Codespace on the draft PR branch |
+| `codespace` | `machine` | no | `basicLinux32gb` | Codespace machine type |
+| `codespace` | `idle-timeout` | no | `30m` | Auto-stop Codespace after idle period |
 
 ## Manager Config: `helm-manager.toml`
 

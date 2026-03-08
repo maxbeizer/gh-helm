@@ -23,3 +23,9 @@ source-of-truth = "docs/SOURCE_OF_TRUTH.md"  # Living project goals document
 [filters]
 status = "Ready"                    # Project board status to watch
 labels = ["agent-ready"]            # Only claim issues with these labels
+
+# Optional: Codespace configuration for review environments
+[codespace]
+enabled = false                     # Auto-create Codespace on draft PR
+machine = "basicLinux32gb"          # Codespace machine type
+idle-timeout = "30m"                # Auto-stop after idle

@@ -22,15 +22,18 @@ type StartOptions struct {
 	Repo        string
 	Model       string
 	DryRun      bool
+	Codespace   bool
 }
 
 type StartResult struct {
-	Session   string        `json:"session"`
-	Issue     github.Issue  `json:"issue"`
-	Plan      github.Plan   `json:"plan"`
-	Branch    string        `json:"branch"`
-	Pull      PullRequest   `json:"pull_request"`
-	DryRun    bool          `json:"dry_run"`
+	Session       string       `json:"session"`
+	Issue         github.Issue `json:"issue"`
+	Plan          github.Plan  `json:"plan"`
+	Branch        string       `json:"branch"`
+	Pull          PullRequest  `json:"pull_request"`
+	DryRun        bool         `json:"dry_run"`
+	CodespaceName string       `json:"codespace_name,omitempty"`
+	CodespaceURL  string       `json:"codespace_url,omitempty"`
 }
 
 type PullRequest struct {
@@ -147,6 +150,45 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 
 	result.Branch = branch
 	result.Pull = PullRequest{Number: prNumber, URL: prURL}
+
+	if opts.Codespace || cfg.Codespace.Enabled {
+		machine := cfg.Codespace.Machine
+		if machine == "" {
+			machine = "basicLinux32gb"
+		}
+		idleTimeout := cfg.Codespace.IdleTimeout
+		if idleTimeout == "" {
+			idleTimeout = "30m"
+		}
+
+		csName, csURL, err := CreateCodespace(ctx, CodespaceOpts{
+			Repo:        opts.Repo,
+			Branch:      branch,
+			Machine:     machine,
+			IdleTimeout: idleTimeout,
+		})
+		if err != nil {
+			slog.Warn("codespace creation failed", "error", err)
+		} else {
+			if err := WaitForReady(ctx, csName, 20*time.Minute); err != nil {
+				slog.Warn("codespace not ready", "error", err, "name", csName)
+			} else {
+				result.CodespaceName = csName
+				result.CodespaceURL = csURL
+			}
+		}
+
+		if notifier != nil && result.CodespaceURL != "" {
+			if err := notifier.Notify(ctx, notifications.Message{
+				Title:   "💻 Codespace ready for review",
+				Body:    fmt.Sprintf("PR #%d: %s\nCodespace: %s\nBranch: %s", prNumber, issue.Title, result.CodespaceURL, branch),
+				Channel: cfg.Notifications.OpsChannel,
+				URL:     result.CodespaceURL,
+			}); err != nil {
+				slog.Warn("codespace notification failed", "error", err)
+			}
+		}
+	}
 
 	if err := writeStatus(session, issue, result.Pull); err != nil {
 		return StartResult{}, err

@@ -19,6 +19,7 @@ var projectStartCmd = &cobra.Command{
 		repo, _ := cmd.Flags().GetString("repo")
 		model, _ := cmd.Flags().GetString("model")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		codespace, _ := cmd.Flags().GetBool("codespace")
 
 		agentRunner := agent.NewProjectAgent()
 		result, err := agentRunner.Start(cmd.Context(), agent.StartOptions{
@@ -26,6 +27,7 @@ var projectStartCmd = &cobra.Command{
 			Repo:        repo,
 			Model:       model,
 			DryRun:      dryRun,
+			Codespace:   codespace,
 		})
 		if err != nil {
 			return err
@@ -41,5 +43,6 @@ func init() {
 	projectStartCmd.Flags().String("repo", "", "Repository owner/name")
 	projectStartCmd.Flags().String("model", "", "AI model")
 	projectStartCmd.Flags().Bool("dry-run", false, "Show plan without executing")
+	projectStartCmd.Flags().Bool("codespace", false, "Create a Codespace on the PR branch")
 	projectCmd.AddCommand(projectStartCmd)
 }
