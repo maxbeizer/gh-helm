@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -134,12 +135,14 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 
 	notifier := notifications.New(cfg, opts.Repo, opts.IssueNumber)
 	if notifier != nil {
-		_ = notifier.Notify(ctx, notifications.Message{
+		if err := notifier.Notify(ctx, notifications.Message{
 			Title:   "🤖 gh-helm: Draft PR ready for review",
 			Body:    fmt.Sprintf("PR #%d: %s\nRepo: %s\nIssue: #%d\nAuthor: gh-helm agent (session %s)", prNumber, issue.Title, repoDisplay(opts.Repo), opts.IssueNumber, session),
 			Channel: cfg.Notifications.OpsChannel,
 			URL:     prURL,
-		})
+		}); err != nil {
+			log.Printf("notification error: %v", err)
+		}
 	}
 
 	result.Branch = branch

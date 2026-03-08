@@ -65,8 +65,10 @@ func RepoFromURL(repoURL string) string {
 	return strings.TrimPrefix(repoURL, "https://api.github.com/repos/")
 }
 
+var apiDelay = 500 * time.Millisecond
+
 func sleepRateLimit() {
-	time.Sleep(3 * time.Second)
+	time.Sleep(apiDelay)
 }
 
 func itoa(v int) string {

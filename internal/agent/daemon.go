@@ -135,6 +135,12 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 		if err != nil {
 			return err
 		}
+		defer func() {
+			// Clean up codespace after work is done
+			if delErr := DeleteCodespace(context.Background(), name); delErr != nil {
+				log.Printf("codespace cleanup error: %v", delErr)
+			}
+		}()
 		if err := WaitForReady(ctx, name, 20*time.Minute); err != nil {
 			return err
 		}
@@ -145,12 +151,14 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 		}
 		notifier := notifications.New(cfg, item.Repo, item.Number)
 		if notifier != nil {
-			_ = notifier.Notify(ctx, notifications.Message{
+			if err := notifier.Notify(ctx, notifications.Message{
 				Title:   "💻 Codespace ready",
 				Body:    fmt.Sprintf("Codespace ready for %s#%d\nBranch: %s", item.Repo, item.Number, result.Branch),
 				Channel: cfg.Notifications.OpsChannel,
 				URL:     url,
-			})
+			}); err != nil {
+				log.Printf("notification error: %v", err)
+			}
 		}
 	}
 
@@ -334,14 +342,18 @@ func containsLabel(labels []string, target string) bool {
 }
 
 func commentFailure(ctx context.Context, item guardrails.QueueItem, err error) {
-	_ = github.CommentIssue(ctx, item.Repo, item.Number, fmt.Sprintf("🤖 gh-helm agent encountered an issue: `%s`", err.Error()))
+	if err := github.CommentIssue(ctx, item.Repo, item.Number, fmt.Sprintf("🤖 gh-helm agent encountered an issue: `%s`", err.Error())); err != nil {
+		log.Printf("comment error: %v", err)
+	}
 }
 
 func moveToStatus(ctx context.Context, owner string, project int, item guardrails.QueueItem, status string) {
 	if owner == "" || project == 0 {
 		return
 	}
-	_ = github.MoveIssueToStatus(ctx, owner, project, item.NodeID, status)
+	if err := github.MoveIssueToStatus(ctx, owner, project, item.NodeID, status); err != nil {
+		log.Printf("move status error: %v", err)
+	}
 }
 
 func logFailure(item guardrails.QueueItem, err error) {
@@ -357,14 +369,18 @@ func logFailure(item guardrails.QueueItem, err error) {
 	}
 	var entries []failureEntry
 	if data, err := os.ReadFile(path); err == nil {
-		_ = json.Unmarshal(data, &entries)
+		if err := json.Unmarshal(data, &entries); err != nil {
+			log.Printf("unmarshal failures: %v", err)
+		}
 	}
 	entries = append(entries, entry)
 	data, err := json.MarshalIndent(entries, "", "  ")
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(path, data, 0o644)
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		log.Printf("write failures log: %v", err)
+	}
 }
 
 func defaultIfEmpty(val string, fallback string) string {

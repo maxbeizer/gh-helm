@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -33,5 +34,8 @@ func (s *SlackNotifier) Notify(ctx context.Context, msg Message) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("slack webhook returned status %d", resp.StatusCode)
+	}
 	return nil
 }
