@@ -6,11 +6,11 @@ Put autonomous agents on both sides of engineering work — one that does it, on
 
 ## Current Focus
 
-Phase 1–4 implementation is structurally complete. Core needs before real-world use:
+Core infrastructure is solid. Remaining work before real-world use:
 
-- Test coverage (zero tests currently)
-- Error handling hardening (swallowed errors, missing retries)
-- Performance improvements (sequential API calls, hardcoded rate-limit delays)
+- Structured logging with levels
+- Atomic state file writes (race condition fix)
+- Integration testing with mocked `gh` CLI
 
 ## Key Decisions
 
@@ -20,6 +20,7 @@ Phase 1–4 implementation is structurally complete. Core needs before real-worl
 - **2026-03-08**: State stored in `.helm/` directory within project root
 - **2026-03-08**: GitHub CLI (`gh`) used as primary API interface — subprocess per call, trades perf for auth simplicity
 - **2026-03-08**: Pillar mapping uses multi-signal priority: labels > repos > file paths > keywords > AI inference
+- **2026-03-08**: Config versioning with integer `version` field — loaders validate and error with migration message
 
 ## Architecture
 
@@ -36,22 +37,21 @@ Phase 1–4 implementation is structurally complete. Core needs before real-worl
 - [x] Codespace integration for fire-and-forget issue work
 - [x] Doctor + upgrade commands for project health
 - [x] JSON/jq output on all commands
-- [ ] Test coverage
-- [ ] Retry/backoff on API failures
-- [ ] Codespace cleanup (delete after use)
+- [x] Test coverage (config, pillars, guardrails, schedule, output — 1025 lines)
+- [x] Retry/backoff on API failures (3 attempts, exponential 1s/2s)
+- [x] Codespace cleanup (deferred delete after creation)
+- [x] Error handling hardened (swallowed errors → logged)
+- [x] Rate limiting reduced from 3s to 500ms
 - [ ] Structured logging with levels
 - [ ] Atomic state file writes (race condition fix)
 
 ## Risks & Blockers
 
-- Zero test files — any refactoring is high-risk without coverage
 - State files (`.helm/state.json`, `.helm/failures.json`) have race conditions under concurrent agents
-- Hardcoded 3-second rate-limit delays make manager commands slow for larger teams
-- Codespace leak: `DeleteCodespace()` exists but is never called in daemon flow
+- No integration tests yet (unit tests cover pure logic only)
 
 ## Next Up
 
-- Add unit tests for pillar mapping, config parsing, guardrails, and schedule logic
-- Implement retry with exponential backoff on `gh` CLI calls
-- Replace hardcoded rate-limit sleep with header-based adaptive delays
-- Wire up `DeleteCodespace()` in daemon cleanup
+- Add structured logging (replace log.Printf with leveled logger)
+- Atomic state file writes (temp file + rename pattern)
+- Integration tests with mocked `gh` CLI output
