@@ -1,6 +1,29 @@
+# Build output
 bin/
+gh-helm
+
+# State directory
+.helm/
+
+# Legacy
 .max-ops/
+
+# OS
 .DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+*.exe
+*.test
+*.out
+
+# Misc
 .todos/
 .sidecar/
 .sidecar-agent
