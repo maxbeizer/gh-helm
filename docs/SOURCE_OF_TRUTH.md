@@ -6,7 +6,7 @@ Put autonomous agents on both sides of engineering work — one that does it, on
 
 ## Current Focus
 
-Core infrastructure complete. Ready for real-world use and feature development on open issues (#2, #3, #4).
+All planned features implemented. Zero open issues. Ready for real-world testing against a live project.
 
 ## Key Decisions
 
@@ -44,6 +44,9 @@ Core infrastructure complete. Ready for real-world use and feature development o
 - [x] Structured logging with slog + --verbose flag
 - [x] Atomic state file writes (temp file + rename)
 - [x] Integration tests with mocked gh CLI (7 tests)
+- [x] Hubber profile-based work suggestions (`gh helm project suggest`)
+- [x] Codespace creation on draft PR (`--codespace` flag + config)
+- [x] Manager stats command with bus factor analysis
 
 ## Risks & Blockers
 
@@ -52,4 +55,5 @@ Core infrastructure complete. Ready for real-world use and feature development o
 ## Next Up
 
 - Real-world testing against a live project
-- Feature work: issues #2 (hubber profiles), #3 (codespace on PR), #4 (reporting dashboard)
+- AI-powered pillar inference (currently keyword-only fallback)
+- Manager agent learning (adapt to what manager values over time)
