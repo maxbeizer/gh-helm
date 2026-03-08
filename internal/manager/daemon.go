@@ -3,7 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -42,7 +42,7 @@ func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger Logger) 
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
-	logf := log.Printf
+	logf := func(format string, args ...any) { slog.Info(fmt.Sprintf(format, args...)) }
 	if logger != nil {
 		logf = logger.Printf
 	}

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -25,4 +27,16 @@ func Execute(ctx context.Context) error {
 func init() {
 	rootCmd.PersistentFlags().Bool("json", false, "Output JSON")
 	rootCmd.PersistentFlags().String("jq", "", "Filter JSON output with jq")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable debug logging")
+
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		verbose, _ := cmd.Flags().GetBool("verbose")
+		level := slog.LevelInfo
+		if verbose {
+			level = slog.LevelDebug
+		}
+		handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+		slog.SetDefault(slog.New(handler))
+		return nil
+	}
 }

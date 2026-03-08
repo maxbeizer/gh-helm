@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -141,7 +141,7 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 			Channel: cfg.Notifications.OpsChannel,
 			URL:     prURL,
 		}); err != nil {
-			log.Printf("notification error: %v", err)
+			slog.Warn("notification failed", "error", err)
 		}
 	}
 

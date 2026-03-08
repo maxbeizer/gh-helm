@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/state"
 )
 
 type State struct {
@@ -31,20 +32,17 @@ func statusPath() string {
 }
 
 func writeStatus(session string, issue github.Issue, pr PullRequest) error {
-	state := State{
+	s := State{
 		Session:      session,
 		LastActivity: time.Now(),
 		IssuesWorked: []IssueInfo{{Number: issue.Number, Title: issue.Title}},
 		PullsCreated: []PullInfo{{Number: pr.Number, URL: pr.URL}},
 	}
-	if err := os.MkdirAll(filepath.Dir(statusPath()), 0o755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(state, "", "  ")
+	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(statusPath(), data, 0o644)
+	return state.WriteAtomic(statusPath(), data, 0o644)
 }
 
 func ReadStatus() (State, error) {

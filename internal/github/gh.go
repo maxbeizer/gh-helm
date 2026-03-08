@@ -9,7 +9,15 @@ import (
 	"time"
 )
 
+// RunGhFunc is the function used to execute gh CLI commands.
+// Override in tests to provide mock responses.
+var RunGhFunc = defaultRunGh
+
 func runGh(ctx context.Context, args ...string) ([]byte, error) {
+	return RunGhFunc(ctx, args...)
+}
+
+func defaultRunGh(ctx context.Context, args ...string) ([]byte, error) {
 	var lastErr error
 	for attempt := 0; attempt < 3; attempt++ {
 		if attempt > 0 {

@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/state"
 	"github.com/maxbeizer/gh-helm/internal/github"
 	"github.com/maxbeizer/gh-helm/internal/guardrails"
 	"github.com/maxbeizer/gh-helm/internal/notifications"
@@ -69,7 +70,7 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 	limiter := guardrails.NewRateLimiter(maxPerHour)
 	seen := make(map[string]bool)
 
-	logf := log.Printf
+	logf := func(format string, args ...any) { slog.Info(fmt.Sprintf(format, args...)) }
 	if opts.Logger != nil {
 		logf = opts.Logger.Printf
 	}
@@ -110,7 +111,7 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 		if opts.Logger != nil {
 			opts.Logger.Printf("dry run: would process %s#%d", item.Repo, item.Number)
 		} else {
-			log.Printf("dry run: would process %s#%d", item.Repo, item.Number)
+			slog.Info("dry run: would process", "repo", item.Repo, "issue", item.Number)
 		}
 		return nil
 	}
@@ -138,7 +139,7 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 		defer func() {
 			// Clean up codespace after work is done
 			if delErr := DeleteCodespace(context.Background(), name); delErr != nil {
-				log.Printf("codespace cleanup error: %v", delErr)
+				slog.Warn("codespace cleanup failed", "error", delErr)
 			}
 		}()
 		if err := WaitForReady(ctx, name, 20*time.Minute); err != nil {
@@ -157,7 +158,7 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 				Channel: cfg.Notifications.OpsChannel,
 				URL:     url,
 			}); err != nil {
-				log.Printf("notification error: %v", err)
+				slog.Warn("notification failed", "error", err)
 			}
 		}
 	}
@@ -343,7 +344,7 @@ func containsLabel(labels []string, target string) bool {
 
 func commentFailure(ctx context.Context, item guardrails.QueueItem, err error) {
 	if err := github.CommentIssue(ctx, item.Repo, item.Number, fmt.Sprintf("🤖 gh-helm agent encountered an issue: `%s`", err.Error())); err != nil {
-		log.Printf("comment error: %v", err)
+		slog.Warn("comment failed", "error", err)
 	}
 }
 
@@ -352,7 +353,7 @@ func moveToStatus(ctx context.Context, owner string, project int, item guardrail
 		return
 	}
 	if err := github.MoveIssueToStatus(ctx, owner, project, item.NodeID, status); err != nil {
-		log.Printf("move status error: %v", err)
+		slog.Warn("move status failed", "error", err)
 	}
 }
 
@@ -364,13 +365,10 @@ func logFailure(item guardrails.QueueItem, err error) {
 		Error: err.Error(),
 	}
 	path := filepath.Join(".helm", "failures.json")
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return
-	}
 	var entries []failureEntry
 	if data, err := os.ReadFile(path); err == nil {
 		if err := json.Unmarshal(data, &entries); err != nil {
-			log.Printf("unmarshal failures: %v", err)
+			slog.Warn("unmarshal failures log", "error", err)
 		}
 	}
 	entries = append(entries, entry)
@@ -378,8 +376,8 @@ func logFailure(item guardrails.QueueItem, err error) {
 	if err != nil {
 		return
 	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		log.Printf("write failures log: %v", err)
+	if err := state.WriteAtomic(path, data, 0o644); err != nil {
+		slog.Warn("write failures log", "error", err)
 	}
 }
 
