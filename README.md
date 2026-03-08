@@ -117,9 +117,9 @@ Agent spins up a Codespace (or uses a pre-configured one), works overnight. You 
 
 **Daemon (continuous):**
 ```bash
-max-ops project daemon
+max-ops project daemon --status Ready --max-per-hour 3 --codespace
 ```
-Agent polls the project board continuously. Issues land in "Ready" → agent picks them up. Runs in a Codespace indefinitely.
+Agent polls the project board continuously. Issues land in "Ready" → agent picks them up. Optional filters/guardrails let you scope by status/label, and `--codespace` spins up a workspace per PR branch.
 
 ### Source of Truth Document
 
@@ -202,6 +202,7 @@ notifications:
 schedule:
   pulse: "0 9 * * 1"        # Team pulse every Monday 9am
   prep: "0 8 * * *"         # 1-1 prep morning of scheduled meetings
+  observe: "0 2 * * 5"      # Weekly observations posted Friday night
 ```
 
 ### Manager Agent Commands
@@ -213,7 +214,7 @@ max-ops manager prep <handle>           # 1-1 prep for a report
 max-ops manager pulse                   # Team health overview
 max-ops manager pillars                 # Show pillar definitions
 max-ops manager report <handle>         # Report card for a team member
-max-ops manager start --observe-interval 24h  # Continuous observe loop
+max-ops manager start                   # Scheduled daemon (observe/pulse/prep)
 ```
 
 ### What the Manager Agent Does

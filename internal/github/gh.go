@@ -18,6 +18,10 @@ func runGh(ctx context.Context, args ...string) ([]byte, error) {
 	return out, nil
 }
 
+func RunWith(ctx context.Context, args ...string) ([]byte, error) {
+	return runGh(ctx, args...)
+}
+
 func CurrentUser(ctx context.Context) (string, error) {
 	out, err := runGh(ctx, "api", "user", "--jq", ".login")
 	if err != nil {

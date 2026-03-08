@@ -1,0 +1,13 @@
+{
+  "name": "max-ops-daemon",
+  "image": "mcr.microsoft.com/devcontainers/go:1.24",
+  "postStartCommand": "go build -o /tmp/max-ops . && /tmp/max-ops project daemon --max-per-hour 3",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "codespaces": {
+      "machine": "basicLinux32gb"
+    }
+  }
+}
