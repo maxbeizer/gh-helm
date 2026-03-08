@@ -116,6 +116,20 @@ Show configured pillar definitions and their signals.
 gh helm manager pillars
 ```
 
+### `gh helm manager stats`
+
+Show team or individual statistics including PR velocity, cycle time, review turnaround, pillar coverage, and bus factor analysis.
+
+```bash
+gh helm manager stats                   # Team-wide stats
+gh helm manager stats sarah             # Individual stats
+gh helm manager stats --since 90d       # Custom look-back period
+```
+
+| Flag | Description |
+|------|-------------|
+| `--since` | Look back period (e.g. `30d`, `720h`) |
+
 ### `gh helm manager report`
 
 Generate a full report card for a team member, including pillar impact, growth tracking, and notable contributions.
