@@ -13,6 +13,7 @@ agent:
 notifications:
   channel: slack                     # slack | teams | discord | github
   ops-channel: "#project-alpha-ops"  # Where PR-ready notifications post
+  webhook-url: "https://hooks.slack.com/services/..." # Slack incoming webhook
 
 source-of-truth: docs/SOURCE_OF_TRUTH.md  # Living project goals document
 
