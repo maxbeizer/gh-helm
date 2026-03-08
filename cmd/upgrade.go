@@ -3,14 +3,14 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/maxbeizer/max-ops/internal/output"
-	"github.com/maxbeizer/max-ops/internal/upgrade"
+	"github.com/maxbeizer/gh-helm/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/upgrade"
 	"github.com/spf13/cobra"
 )
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade a project to the latest max-ops defaults",
+	Short: "Upgrade a project to the latest gh-helm defaults",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		result, err := upgrade.Run(cmd.Context(), upgrade.Options{DryRun: dryRun})
@@ -24,7 +24,7 @@ var upgradeCmd = &cobra.Command{
 			return out.Print(result)
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), "🔄 max-ops upgrade")
+		fmt.Fprintln(cmd.OutOrStdout(), "🔄 gh-helm upgrade")
 		fmt.Fprintln(cmd.OutOrStdout(), "")
 		for _, change := range result.Changes {
 			fmt.Fprintf(cmd.OutOrStdout(), "  %s %s\n", iconForChange(change.Status), change.Message)

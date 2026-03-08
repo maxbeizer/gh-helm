@@ -3,8 +3,8 @@ package cmd
 import (
 	"errors"
 
-	"github.com/maxbeizer/max-ops/internal/agent"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/agent"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/maxbeizer/gh-helm/internal/config"
 )
 
 type Logger interface {
@@ -82,7 +84,7 @@ func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger Logger) 
 	}
 }
 
-func parseScheduleSet(cfg ManagerSchedule) (scheduleSet, error) {
+func parseScheduleSet(cfg config.ManagerSchedule) (scheduleSet, error) {
 	set := scheduleSet{}
 	if cfg.Pulse != "" {
 		entry, err := parseSchedule(cfg.Pulse)

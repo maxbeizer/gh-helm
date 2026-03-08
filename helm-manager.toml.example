@@ -1,0 +1,89 @@
+# helm-manager.toml — Manager Agent configuration
+# Place this wherever you run the manager agent (local machine, dedicated repo, etc.)
+
+[manager]
+hubber = "maxbeizer"
+
+[[projects]]
+owner = "myorg"
+board = 25
+name = "Project Alpha"
+
+[[projects]]
+owner = "myorg"
+board = 30
+name = "Project Beta"
+
+[[team]]
+handle = "sarah"
+one-one-repo = "maxbeizer/sarah-1-1"
+pillars = ["reliability", "velocity"]
+
+[[team]]
+handle = "alex"
+one-one-repo = "maxbeizer/alex-1-1"
+pillars = ["security", "developer-experience"]
+
+[[team]]
+handle = "jordan"
+one-one-repo = "maxbeizer/jordan-1-1"
+pillars = ["velocity", "mentorship"]
+
+# Performance pillars — fully customizable to your org's framework.
+# The agent maps PRs/issues to pillars using labels, repos, file paths, and AI inference.
+[pillars.reliability]
+description = "System stability, incident reduction, monitoring coverage"
+signals = [
+    "bug fixes",
+    "test coverage improvements",
+    "monitoring and alerting PRs",
+    "incident response",
+]
+repos = ["myorg/monitoring", "myorg/alerts"]
+labels = ["bug", "reliability", "testing"]
+
+[pillars.velocity]
+description = "Feature delivery speed, PR cycle time, unblocking others"
+signals = [
+    "PRs merged per week",
+    "PR cycle time",
+    "reviews completed",
+    "issues closed",
+]
+
+[pillars.security]
+description = "Vulnerability remediation, secure coding, audit compliance"
+signals = [
+    "security-related PRs",
+    "dependency updates",
+    "audit findings addressed",
+]
+labels = ["security", "dependencies"]
+
+[pillars.developer-experience]
+description = "Tooling, documentation, onboarding, developer productivity"
+signals = [
+    "documentation PRs",
+    "tooling improvements",
+    "onboarding guides",
+]
+labels = ["documentation", "dx", "tooling"]
+
+[pillars.mentorship]
+description = "Code review quality, knowledge sharing, growing others"
+signals = [
+    "review depth and quality",
+    "review turnaround time",
+    "docs authored",
+    "pair programming sessions",
+]
+
+[notifications]
+channel = "slack"
+ops-channel = "#engineering-ops"
+
+# Scheduled actions (cron syntax, times in UTC)
+[schedule]
+pulse = "0 14 * * 1"     # Team pulse every Monday 9am CT
+prep = "0 13 * * *"      # 1-1 prep at 8am CT daily (runs only if 1-1 scheduled)
+observe = "0 2 * * 5"    # Weekly observations posted Friday night

@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/maxbeizer/max-ops/cmd"
+	"github.com/maxbeizer/gh-helm/cmd"
 )
 
 func main() {

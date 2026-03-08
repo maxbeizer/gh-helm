@@ -4,64 +4,62 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/yaml.v3"
+	"github.com/BurntSushi/toml"
 )
 
 type ManagerConfig struct {
-	Manager       ManagerSettings              `yaml:"manager"`
-	Projects      []ManagerProject             `yaml:"projects"`
-	Team          []TeamMember                 `yaml:"team"`
-	Pillars       map[string]PillarConfig      `yaml:"pillars"`
-	Notifications NotificationsConfig          `yaml:"notifications"`
-	Schedule      ManagerSchedule              `yaml:"schedule"`
+	Manager       ManagerSettings         `toml:"manager"`
+	Projects      []ManagerProject        `toml:"projects"`
+	Team          []TeamMember            `toml:"team"`
+	Pillars       map[string]PillarConfig `toml:"pillars"`
+	Notifications NotificationsConfig     `toml:"notifications"`
+	Schedule      ManagerSchedule         `toml:"schedule"`
 }
 
 type ManagerSettings struct {
-	Hubber string `yaml:"hubber"`
+	Hubber string `toml:"hubber"`
 }
 
 type ManagerProject struct {
-	Owner string `yaml:"owner"`
-	Board int    `yaml:"board"`
-	Name  string `yaml:"name"`
+	Owner string `toml:"owner"`
+	Board int    `toml:"board"`
+	Name  string `toml:"name"`
 }
 
 type TeamMember struct {
-	Handle    string   `yaml:"handle"`
-	OneOneRepo string  `yaml:"1-1-repo"`
-	Pillars   []string `yaml:"pillars"`
+	Handle     string   `toml:"handle"`
+	OneOneRepo string   `toml:"one-one-repo"`
+	Pillars    []string `toml:"pillars"`
 }
 
 type PillarConfig struct {
-	Description string   `yaml:"description"`
-	Signals     []string `yaml:"signals"`
-	Repos       []string `yaml:"repos"`
-	Labels      []string `yaml:"labels"`
-	Paths       []string `yaml:"paths"`
+	Description string   `toml:"description"`
+	Signals     []string `toml:"signals"`
+	Repos       []string `toml:"repos"`
+	Labels      []string `toml:"labels"`
+	Paths       []string `toml:"paths"`
 }
 
 type ManagerSchedule struct {
-	Pulse   string `yaml:"pulse"`
-	Prep    string `yaml:"prep"`
-	Observe string `yaml:"observe"`
+	Pulse   string `toml:"pulse"`
+	Prep    string `toml:"prep"`
+	Observe string `toml:"observe"`
 }
 
 func LoadManager(path string) (ManagerConfig, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ManagerConfig{}, err
-	}
 	var cfg ManagerConfig
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return ManagerConfig{}, err
 	}
 	return cfg, nil
 }
 
 func WriteManager(path string, cfg ManagerConfig) error {
-	data, err := yaml.Marshal(&cfg)
+	f, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("marshal manager config: %w", err)
+		return fmt.Errorf("create manager config file: %w", err)
 	}
-	return os.WriteFile(path, data, 0o644)
+	defer f.Close()
+	enc := toml.NewEncoder(f)
+	return enc.Encode(cfg)
 }

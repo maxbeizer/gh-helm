@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/agent"
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/agent"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ var projectDaemonCmd = &cobra.Command{
 	Use:   "daemon",
 	Short: "Continuous project agent loop",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load("max-ops.yaml")
+		cfg, err := config.Load("helm.toml")
 		if err != nil {
 			return err
 		}

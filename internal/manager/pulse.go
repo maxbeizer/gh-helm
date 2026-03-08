@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/maxbeizer/max-ops/internal/github"
-	"github.com/maxbeizer/max-ops/internal/pillars"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/pillars"
 )
 
 type PulseEntry struct {

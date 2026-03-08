@@ -1,62 +1,59 @@
 package config
 
 import (
-	"fmt"
-	"os"
+"fmt"
+"os"
 
-	"gopkg.in/yaml.v3"
+"github.com/BurntSushi/toml"
 )
 
 type Config struct {
-	Project        ProjectConfig        `yaml:"project"`
-	Agent          AgentConfig          `yaml:"agent"`
-	Notifications  NotificationsConfig  `yaml:"notifications"`
-	SourceOfTruth  string               `yaml:"source-of-truth"`
-	Filters        FiltersConfig        `yaml:"filters"`
+Project       ProjectConfig       `toml:"project"`
+Agent         AgentConfig         `toml:"agent"`
+Notifications NotificationsConfig `toml:"notifications"`
+SourceOfTruth string              `toml:"source-of-truth"`
+Filters       FiltersConfig       `toml:"filters"`
 }
 
 type ProjectConfig struct {
-	Board int    `yaml:"board"`
-	Owner string `yaml:"owner"`
+Board int    `toml:"board"`
+Owner string `toml:"owner"`
 }
 
 type AgentConfig struct {
-	Hubber    string `yaml:"hubber"`
-	Model     string `yaml:"model"`
-	MaxPerHour int   `yaml:"max-per-hour"`
+Hubber     string `toml:"hubber"`
+Model      string `toml:"model"`
+MaxPerHour int    `toml:"max-per-hour"`
 }
 
 type NotificationsConfig struct {
-	Channel    string `yaml:"channel"`
-	OpsChannel string `yaml:"ops-channel"`
-	WebhookURL string `yaml:"webhook-url"`
+Channel    string `toml:"channel"`
+OpsChannel string `toml:"ops-channel"`
+WebhookURL string `toml:"webhook-url"`
 }
 
 type FiltersConfig struct {
-	Status string   `yaml:"status"`
-	Labels []string `yaml:"labels"`
+Status string   `toml:"status"`
+Labels []string `toml:"labels"`
 }
 
 func Load(path string) (Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return Config{}, err
-	}
-
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return Config{}, err
-	}
-	if cfg.SourceOfTruth == "" {
-		cfg.SourceOfTruth = "docs/SOURCE_OF_TRUTH.md"
-	}
-	return cfg, nil
+var cfg Config
+if _, err := toml.DecodeFile(path, &cfg); err != nil {
+return Config{}, err
+}
+if cfg.SourceOfTruth == "" {
+cfg.SourceOfTruth = "docs/SOURCE_OF_TRUTH.md"
+}
+return cfg, nil
 }
 
 func Write(path string, cfg Config) error {
-	data, err := yaml.Marshal(&cfg)
-	if err != nil {
-		return fmt.Errorf("marshal config: %w", err)
-	}
-	return os.WriteFile(path, data, 0o644)
+f, err := os.Create(path)
+if err != nil {
+return fmt.Errorf("create config file: %w", err)
+}
+defer f.Close()
+enc := toml.NewEncoder(f)
+return enc.Encode(cfg)
 }

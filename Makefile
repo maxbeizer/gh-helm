@@ -1,11 +1,11 @@
 .PHONY: build run test clean
 .DEFAULT_GOAL := help
 
-BINARY ?= bin/max-ops
+BINARY ?= bin/gh-helm
 GO ?= go
 
 help:
-	@echo "max-ops developer commands"
+	@echo "gh-helm developer commands"
 	@echo "  make build    Build ./$(BINARY)"
 	@echo "  make run      Build and run"
 	@echo "  make test     Run tests"

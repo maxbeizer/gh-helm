@@ -1,7 +1,7 @@
 {
-  "name": "max-ops-daemon",
+  "name": "gh-helm-daemon",
   "image": "mcr.microsoft.com/devcontainers/go:1.24",
-  "postStartCommand": "go build -o /tmp/max-ops . && /tmp/max-ops project daemon --max-per-hour 3",
+  "postStartCommand": "go build -o /tmp/gh-helm . && /tmp/gh-helm project daemon --max-per-hour 3",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },

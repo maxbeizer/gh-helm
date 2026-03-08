@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/github"
-	"github.com/maxbeizer/max-ops/internal/guardrails"
-	"github.com/maxbeizer/max-ops/internal/notifications"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/guardrails"
+	"github.com/maxbeizer/gh-helm/internal/notifications"
 )
 
 type Logger interface {
@@ -139,7 +139,7 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 			return err
 		}
 
-		cfg, err := config.Load("max-ops.yaml")
+		cfg, err := config.Load("helm.toml")
 		if err != nil {
 			return err
 		}
@@ -334,7 +334,7 @@ func containsLabel(labels []string, target string) bool {
 }
 
 func commentFailure(ctx context.Context, item guardrails.QueueItem, err error) {
-	_ = github.CommentIssue(ctx, item.Repo, item.Number, fmt.Sprintf("🤖 max-ops agent encountered an issue: `%s`", err.Error()))
+	_ = github.CommentIssue(ctx, item.Repo, item.Number, fmt.Sprintf("🤖 gh-helm agent encountered an issue: `%s`", err.Error()))
 }
 
 func moveToStatus(ctx context.Context, owner string, project int, item guardrails.QueueItem, status string) {
@@ -351,7 +351,7 @@ func logFailure(item guardrails.QueueItem, err error) {
 		Issue: item.Number,
 		Error: err.Error(),
 	}
-	path := filepath.Join(".max-ops", "failures.json")
+	path := filepath.Join(".helm", "failures.json")
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return
 	}

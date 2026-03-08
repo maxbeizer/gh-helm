@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/manager"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/manager"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -18,10 +18,10 @@ var managerStartCmd = &cobra.Command{
 		if jsonFlag || jqExpr != "" {
 			out := output.New(cmd)
 			logger := managerJSONLogger{out: out}
-			return manager.RunManagerDaemon(cmd.Context(), "manager-ops.yaml", logger)
+			return manager.RunManagerDaemon(cmd.Context(), "helm-manager.toml", logger)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "manager daemon started")
-		return manager.RunManagerDaemon(cmd.Context(), "manager-ops.yaml", nil)
+		return manager.RunManagerDaemon(cmd.Context(), "helm-manager.toml", nil)
 	},
 }
 

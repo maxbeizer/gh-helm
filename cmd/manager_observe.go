@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/maxbeizer/max-ops/internal/manager"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/manager"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ var managerObserveCmd = &cobra.Command{
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		handle, _ := cmd.Flags().GetString("handle")
 
-		mgr, err := manager.Load("manager-ops.yaml")
+		mgr, err := manager.Load("helm-manager.toml")
 		if err != nil {
 			return err
 		}

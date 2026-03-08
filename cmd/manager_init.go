@@ -7,15 +7,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/github"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
 var managerInitCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Create a manager-ops.yaml in the current directory",
+	Short: "Create a helm-manager.toml in the current directory",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		hubber, _ := cmd.Flags().GetString("hubber")
 		reader := bufio.NewReader(os.Stdin)
@@ -107,12 +107,12 @@ var managerInitCmd = &cobra.Command{
 			},
 		}
 
-		if err := config.WriteManager("manager-ops.yaml", cfg); err != nil {
+		if err := config.WriteManager("helm-manager.toml", cfg); err != nil {
 			return err
 		}
 
 		out := output.New(cmd)
-		return out.Print(map[string]string{"config": "manager-ops.yaml"})
+		return out.Print(map[string]string{"config": "helm-manager.toml"})
 	},
 }
 

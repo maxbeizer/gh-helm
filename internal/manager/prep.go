@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/github"
-	"github.com/maxbeizer/max-ops/internal/oneone"
-	"github.com/maxbeizer/max-ops/internal/pillars"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/oneone"
+	"github.com/maxbeizer/gh-helm/internal/pillars"
 )
 
 type PrepResult struct {

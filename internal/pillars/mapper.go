@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/config"
 )
 
 type ActivityItem struct {

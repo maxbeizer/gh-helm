@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/maxbeizer/max-ops/internal/manager"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/manager"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +12,7 @@ var managerReportCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		since, _ := cmd.Flags().GetString("since")
-		mgr, err := manager.Load("manager-ops.yaml")
+		mgr, err := manager.Load("helm-manager.toml")
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/github"
 )
 
 type State struct {
@@ -27,7 +27,7 @@ type PullInfo struct {
 }
 
 func statusPath() string {
-	return filepath.Join(".max-ops", "state.json")
+	return filepath.Join(".helm", "state.json")
 }
 
 func writeStatus(session string, issue github.Issue, pr PullRequest) error {

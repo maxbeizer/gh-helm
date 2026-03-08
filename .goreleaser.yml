@@ -1,6 +1,6 @@
-project_name: max-ops
+project_name: gh-helm
 builds:
-  - binary: max-ops
+  - binary: gh-helm
     goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
     ldflags: [-s, -w]

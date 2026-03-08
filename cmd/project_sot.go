@@ -3,9 +3,9 @@ package cmd
 import (
 	"errors"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/output"
-	"github.com/maxbeizer/max-ops/internal/sot"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/sot"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var projectSotCmd = &cobra.Command{
 	Use:   "sot",
 	Short: "Source of truth document",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load("max-ops.yaml")
+		cfg, err := config.Load("helm.toml")
 		if err != nil {
 			return err
 		}
@@ -34,7 +34,7 @@ var projectSotProposeCmd = &cobra.Command{
 		if decision == "" {
 			return errors.New("--decision is required")
 		}
-		cfg, err := config.Load("max-ops.yaml")
+		cfg, err := config.Load("helm.toml")
 		if err != nil {
 			return err
 		}

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/github"
-	"github.com/maxbeizer/max-ops/internal/upgrade"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/upgrade"
 )
 
 type Status string
@@ -49,11 +49,11 @@ var requiredLabels = []string{"agent-ready", "agent-in-progress", "agent-done", 
 
 func Run(ctx context.Context, opts Options) (Result, error) {
 	checks := []CheckResult{}
-	cfg, cfgErr := config.Load("max-ops.yaml")
+	cfg, cfgErr := config.Load("helm.toml")
 	if cfgErr != nil {
-		checks = append(checks, CheckResult{Key: "config", Status: StatusFail, Message: "max-ops.yaml missing or invalid"})
+		checks = append(checks, CheckResult{Key: "config", Status: StatusFail, Message: "helm.toml missing or invalid"})
 	} else {
-		checks = append(checks, CheckResult{Key: "config", Status: StatusPass, Message: "max-ops.yaml found and valid"})
+		checks = append(checks, CheckResult{Key: "config", Status: StatusPass, Message: "helm.toml found and valid"})
 	}
 
 	if cfgErr != nil {
@@ -213,11 +213,11 @@ func checkAuth(ctx context.Context) CheckResult {
 }
 
 func checkStateDir() CheckResult {
-	path := ".max-ops"
+	path := ".helm"
 	if info, err := os.Stat(path); err == nil && info.IsDir() {
-		return CheckResult{Key: "state", Status: StatusInfo, Message: ".max-ops/ present"}
+		return CheckResult{Key: "state", Status: StatusInfo, Message: ".helm/ present"}
 	}
-	return CheckResult{Key: "state", Status: StatusInfo, Message: ".max-ops/ not found (first run?)"}
+	return CheckResult{Key: "state", Status: StatusInfo, Message: ".helm/ not found (first run?)"}
 }
 
 func itoa(value int) string {

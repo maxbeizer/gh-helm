@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 

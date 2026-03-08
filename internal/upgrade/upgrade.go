@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/github"
-	"gopkg.in/yaml.v3"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/BurntSushi/toml"
 )
 
 type ChangeStatus string
@@ -56,7 +56,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 					continue
 				}
 				color := labelColors[label]
-				desc := "max-ops required label"
+				desc := "gh-helm required label"
 				if err := github.CreateLabel(ctx, repo, label, color, desc); err != nil {
 					return Result{}, err
 				}
@@ -69,24 +69,24 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 		changes = append(changes, Change{Status: StatusSkipped, Message: "Labels: repo not detected"})
 	}
 
-	cfg, cfgErr := config.Load("max-ops.yaml")
+	cfg, cfgErr := config.Load("helm.toml")
 	if cfgErr == nil {
-		missingSOT := configFieldMissing("max-ops.yaml", "source-of-truth")
+		missingSOT := configFieldMissing("helm.toml", "source-of-truth")
 		updated, changed := mergeDefaults(cfg, missingSOT)
 		if changed {
 			if opts.DryRun {
-				changes = append(changes, Change{Status: StatusSkipped, Message: "Config: would update max-ops.yaml"})
+				changes = append(changes, Change{Status: StatusSkipped, Message: "Config: would update helm.toml"})
 			} else {
-				if err := config.Write("max-ops.yaml", updated); err != nil {
+				if err := config.Write("helm.toml", updated); err != nil {
 					return Result{}, err
 				}
-				changes = append(changes, Change{Status: StatusApplied, Message: "Config: updated max-ops.yaml"})
+				changes = append(changes, Change{Status: StatusApplied, Message: "Config: updated helm.toml"})
 			}
 		} else {
-			changes = append(changes, Change{Status: StatusSkipped, Message: "Config: max-ops.yaml already up to date"})
+			changes = append(changes, Change{Status: StatusSkipped, Message: "Config: helm.toml already up to date"})
 		}
 	} else {
-		changes = append(changes, Change{Status: StatusSkipped, Message: "Config: max-ops.yaml not found"})
+		changes = append(changes, Change{Status: StatusSkipped, Message: "Config: helm.toml not found"})
 	}
 
 	if err := ensureDevcontainer(opts.DryRun, &changes); err != nil {
@@ -166,7 +166,7 @@ func ensureDevcontainer(dryRun bool, changes *[]Change) error {
 }
 
 func ensureSourceOfTruth(dryRun bool, changes *[]Change) error {
-	cfg, err := config.Load("max-ops.yaml")
+	cfg, err := config.Load("helm.toml")
 	if err != nil {
 		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Source of Truth: config missing"})
 		return nil
@@ -194,19 +194,19 @@ func ensureSourceOfTruth(dryRun bool, changes *[]Change) error {
 }
 
 func ensureStateDir(dryRun bool, changes *[]Change) error {
-	path := ".max-ops"
+	path := ".helm"
 	if _, err := os.Stat(path); err == nil {
 		*changes = append(*changes, Change{Status: StatusSkipped, Message: "State: already exists"})
 		return nil
 	}
 	if dryRun {
-		*changes = append(*changes, Change{Status: StatusSkipped, Message: "State: would create .max-ops/"})
+		*changes = append(*changes, Change{Status: StatusSkipped, Message: "State: would create .helm/"})
 		return nil
 	}
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		return err
 	}
-	*changes = append(*changes, Change{Status: StatusApplied, Message: "Created: .max-ops/"})
+	*changes = append(*changes, Change{Status: StatusApplied, Message: "Created: .helm/"})
 	return nil
 }
 
@@ -225,33 +225,22 @@ func missingLabels(existing []string, required []string) []string {
 }
 
 func configFieldMissing(path string, field string) bool {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false
-	}
-	var node yaml.Node
-	if err := yaml.Unmarshal(data, &node); err != nil {
-		return false
-	}
-	if len(node.Content) == 0 {
-		return false
-	}
-	root := node.Content[0]
-	if root.Kind != yaml.MappingNode {
-		return false
-	}
-	for i := 0; i < len(root.Content); i += 2 {
-		if root.Content[i].Value == field {
-			return false
-		}
-	}
-	return true
+data, err := os.ReadFile(path)
+if err != nil {
+return false
+}
+var raw map[string]interface{}
+if err := toml.Unmarshal(data, &raw); err != nil {
+return false
+}
+_, ok := raw[field]
+return !ok
 }
 
 const devcontainerTemplate = `{
-  "name": "max-ops-daemon",
+  "name": "gh-helm-daemon",
   "image": "mcr.microsoft.com/devcontainers/go:1.24",
-  "postStartCommand": "go build -o /tmp/max-ops . && /tmp/max-ops project daemon --max-per-hour 3",
+  "postStartCommand": "go build -o /tmp/gh-helm . && /tmp/gh-helm project daemon --max-per-hour 3",
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/pillars"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/pillars"
 )
 
 type Manager struct {

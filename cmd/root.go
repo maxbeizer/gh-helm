@@ -7,8 +7,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "max-ops",
-	Short: "max-ops — autonomous developer agents backed by GitHub",
+	Use:   "gh-helm",
+	Short: "gh-helm — autonomous developer agents backed by GitHub",
 }
 
 func Execute(ctx context.Context) error {

@@ -7,15 +7,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/github"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
 var projectInitCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Create a max-ops.yaml in the current directory",
+	Short: "Create a helm.toml in the current directory",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		board, _ := cmd.Flags().GetInt("project")
 		owner, _ := cmd.Flags().GetString("owner")
@@ -88,12 +88,12 @@ var projectInitCmd = &cobra.Command{
 			SourceOfTruth: sotPath,
 		}
 
-		if err := config.Write("max-ops.yaml", cfg); err != nil {
+		if err := config.Write("helm.toml", cfg); err != nil {
 			return err
 		}
 
 		out := output.New(cmd)
-		return out.Print(map[string]string{"config": "max-ops.yaml"})
+		return out.Print(map[string]string{"config": "helm.toml"})
 	},
 }
 

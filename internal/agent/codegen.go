@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/maxbeizer/max-ops/internal/github"
+	"github.com/maxbeizer/gh-helm/internal/github"
 )
 
 func GeneratePlan(ctx context.Context, model string, issue github.Issue, sotContent string) (github.Plan, error) {
@@ -25,7 +25,7 @@ func GeneratePlan(ctx context.Context, model string, issue github.Issue, sotCont
 }
 
 func repoStructure(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "bash", "-c", "find . -type f \\\( -name '*.go' -o -name '*.ts' -o -name '*.py' \\\) | head -50")
+	cmd := exec.CommandContext(ctx, "bash", "-c", `find . -type f \( -name '*.go' -o -name '*.ts' -o -name '*.py' \) | head -50`)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err

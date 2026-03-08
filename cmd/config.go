@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/maxbeizer/max-ops/internal/config"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
@@ -13,9 +13,9 @@ var configCmd = &cobra.Command{
 
 var configShowCmd = &cobra.Command{
 	Use:   "show",
-	Short: "Show current max-ops.yaml",
+	Short: "Show current helm.toml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load("max-ops.yaml")
+		cfg, err := config.Load("helm.toml")
 		if err != nil {
 			return err
 		}

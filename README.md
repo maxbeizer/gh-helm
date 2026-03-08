@@ -1,14 +1,14 @@
-# max-ops
+# gh-helm
 
 **Autonomous developer agents backed by GitHub as the single source of truth.**
 
-max-ops is a platform where every project gets an agent that does the work, and every manager gets an agent that watches the work. No Jira, no Linear, no Notion — just repos, issues, projects, and PRs.
+gh-helm is a platform where every project gets an agent that does the work, and every manager gets an agent that watches the work. No Jira, no Linear, no Notion — just repos, issues, projects, and PRs.
 
 ## The Idea
 
 Software teams generate enormous amounts of signal — PRs merged, issues opened, reviews completed, branches stalled. Today that signal lives in dashboards nobody checks, standups nobody remembers, and 1-1 docs written in a Friday panic.
 
-max-ops puts agents on both sides:
+gh-helm puts agents on both sides:
 
 - **Project Agents** do the engineering work. A developer points one at an issue, it breaks it down, writes code, pushes draft PRs. The developer reviews, tests, and merges.
 - **Manager Agents** watch the work. They monitor who's shipping what, flag blockers, map contributions to performance pillars, and write observations to 1-1 repos so prep happens passively.
@@ -19,7 +19,7 @@ GitHub is the only source of truth. Every decision, every status change, every o
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        max-ops                               │
+│                        gh-helm                               │
 │                                                              │
 │   ┌─────────────────────┐    ┌────────────────────────────┐ │
 │   │   Project Agent      │    │   Manager Agent             │ │
@@ -46,24 +46,25 @@ GitHub is the only source of truth. Every decision, every status change, every o
 
 ## Project Agent
 
-Each project repo gets its own agent, configured with a simple `max-ops.yaml`:
+Each project repo gets its own agent, configured with a simple `helm.toml`:
 
-```yaml
-# max-ops.yaml (lives in the project repo root)
-project:
-  board: 25                          # GitHub Projects v2 number
-  owner: myorg                       # Project owner
+```toml
+# helm.toml (lives in the project repo root)
 
-agent:
-  hubber: maxbeizer                  # Developer running the agent
-  model: gpt-4o                      # AI model (via GitHub Models)
-  max-per-hour: 3                    # Guardrail
+[project]
+board = 25                              # GitHub Projects v2 number
+owner = "myorg"                         # Project owner
 
-notifications:
-  channel: slack                     # slack | teams | discord | github
-  ops-channel: "#project-alpha-ops"  # Where PR-ready notifications go
+[agent]
+hubber = "maxbeizer"                    # Developer running the agent
+model = "gpt-4o"                        # AI model (via GitHub Models)
+max-per-hour = 3                        # Guardrail
 
-source-of-truth: docs/SOURCE_OF_TRUTH.md  # Living project goals document
+[notifications]
+channel = "slack"                       # slack | teams | discord | github
+ops-channel = "#project-alpha-ops"      # Where PR-ready notifications go
+
+source-of-truth = "docs/SOURCE_OF_TRUTH.md"  # Living project goals document
 ```
 
 ### Workflow
@@ -105,19 +106,19 @@ Developer                          Project Agent
 
 **Local (interactive pairing):**
 ```bash
-max-ops project start --issue 42
+gh helm project start --issue 42
 ```
 Agent works in your local repo. You watch, review, iterate in real-time.
 
 **Codespace (fire and forget):**
 ```bash
-max-ops project start --issue 42 --codespace
+gh helm project start --issue 42 --codespace
 ```
 Agent spins up a Codespace (or uses a pre-configured one), works overnight. You wake up to draft PRs.
 
 **Daemon (continuous):**
 ```bash
-max-ops project daemon --status Ready --max-per-hour 3 --codespace
+gh helm project daemon --status Ready --max-per-hour 3 --codespace
 ```
 Agent polls the project board continuously. Issues land in "Ready" → agent picks them up. Optional filters/guardrails let you scope by status/label, and `--codespace` spins up a workspace per PR branch.
 
@@ -154,108 +155,118 @@ The agent reads this before starting work (context), and flags updates when merg
 
 The manager agent runs separately, configured across all your projects and reports:
 
-```yaml
-# manager-ops.yaml
-manager:
-  hubber: maxbeizer
-  
-projects:
-  - owner: myorg
-    board: 25
-    name: "Project Alpha"
-  - owner: myorg  
-    board: 30
-    name: "Project Beta"
+```toml
+# helm-manager.toml
 
-team:
-  - handle: sarah
-    1-1-repo: maxbeizer/sarah-1-1
-    pillars: [reliability, velocity]     # Areas of focus
-  - handle: alex
-    1-1-repo: maxbeizer/alex-1-1
-    pillars: [security, developer-experience]
-  - handle: jordan
-    1-1-repo: maxbeizer/jordan-1-1
-    pillars: [velocity, mentorship]
+[manager]
+hubber = "maxbeizer"
 
-pillars:
-  reliability:
-    description: "System stability, incident reduction, monitoring coverage"
-    signals: ["bug fixes", "test coverage", "monitoring PRs", "incident response"]
-  velocity:
-    description: "Feature delivery speed, PR cycle time, unblocking others"
-    signals: ["PRs merged", "cycle time", "reviews completed", "issues closed"]
-  security:
-    description: "Vulnerability remediation, secure coding practices, audit compliance"
-    signals: ["security PRs", "dependency updates", "audit findings addressed"]
-  developer-experience:
-    description: "Tooling, documentation, onboarding, developer productivity"
-    signals: ["docs PRs", "tooling improvements", "onboarding guides"]
-  mentorship:
-    description: "Code review quality, knowledge sharing, pair programming"
-    signals: ["review depth", "review turnaround", "docs authored"]
+[[projects]]
+owner = "myorg"
+board = 25
+name = "Project Alpha"
 
-notifications:
-  channel: slack
-  ops-channel: "#engineering-ops"
+[[projects]]
+owner = "myorg"
+board = 30
+name = "Project Beta"
 
-schedule:
-  pulse: "0 9 * * 1"        # Team pulse every Monday 9am
-  prep: "0 8 * * *"         # 1-1 prep morning of scheduled meetings
-  observe: "0 2 * * 5"      # Weekly observations posted Friday night
+[[team]]
+handle = "sarah"
+one-one-repo = "maxbeizer/sarah-1-1"
+pillars = ["reliability", "velocity"]           # Areas of focus
+
+[[team]]
+handle = "alex"
+one-one-repo = "maxbeizer/alex-1-1"
+pillars = ["security", "developer-experience"]
+
+[[team]]
+handle = "jordan"
+one-one-repo = "maxbeizer/jordan-1-1"
+pillars = ["velocity", "mentorship"]
+
+[pillars.reliability]
+description = "System stability, incident reduction, monitoring coverage"
+signals = ["bug fixes", "test coverage", "monitoring PRs", "incident response"]
+
+[pillars.velocity]
+description = "Feature delivery speed, PR cycle time, unblocking others"
+signals = ["PRs merged", "cycle time", "reviews completed", "issues closed"]
+
+[pillars.security]
+description = "Vulnerability remediation, secure coding practices, audit compliance"
+signals = ["security PRs", "dependency updates", "audit findings addressed"]
+
+[pillars.developer-experience]
+description = "Tooling, documentation, onboarding, developer productivity"
+signals = ["docs PRs", "tooling improvements", "onboarding guides"]
+
+[pillars.mentorship]
+description = "Code review quality, knowledge sharing, pair programming"
+signals = ["review depth", "review turnaround", "docs authored"]
+
+[notifications]
+channel = "slack"
+ops-channel = "#engineering-ops"
+
+[schedule]
+pulse = "0 9 * * 1"          # Team pulse every Monday 9am
+prep = "0 8 * * *"           # 1-1 prep morning of scheduled meetings
+observe = "0 2 * * 5"        # Weekly observations posted Friday night
 ```
 
 ### Manager Agent Commands
 
 ```bash
-max-ops manager init                    # Create manager-ops.yaml
-max-ops manager observe                 # One-shot observations
-max-ops manager prep <handle>           # 1-1 prep for a report
-max-ops manager pulse                   # Team health overview
-max-ops manager pillars                 # Show pillar definitions
-max-ops manager report <handle>         # Report card for a team member
-max-ops manager start                   # Scheduled daemon (observe/pulse/prep)
+gh helm manager init                    # Create helm-manager.toml
+gh helm manager observe                 # One-shot observations
+gh helm manager prep <handle>           # 1-1 prep for a report
+gh helm manager pulse                   # Team health overview
+gh helm manager pillars                 # Show pillar definitions
+gh helm manager report <handle>         # Report card for a team member
+gh helm manager start                   # Scheduled daemon (observe/pulse/prep)
 ```
 
 ### Health Checks & Upgrades
 
 ```bash
-max-ops doctor
+gh helm doctor
 ```
 
 Example output:
 
 ```
-🏥 max-ops doctor — project health check
+🏥 gh helm doctor — project health check
 
-  ✅ Config: max-ops.yaml found and valid
+  ✅ Config: helm.toml found and valid
   ✅ Source of Truth: docs/SOURCE_OF_TRUTH.md exists
   ✅ Project Board: #25 accessible (42 items)
   ⚠️  Labels: missing 'agent-ready'
   ✅ DevContainer: .devcontainer/devcontainer.json configured
   ⚠️  Notifications: webhook-url not configured
   ✅ Auth: token has required scopes
-  ℹ️  State: .max-ops/ not found (first run?)
+  ℹ️  State: .helm/ not found (first run?)
 
   Result: 5 passed, 2 warnings, 0 failures
-  Run 'max-ops upgrade' to fix warnings automatically.
+  Run 'gh helm upgrade' to fix warnings automatically.
 ```
 
 ```bash
-max-ops upgrade
+gh helm upgrade
 ```
 
 Example output:
 
 ```
-🔄 max-ops upgrade
+🔄 gh helm upgrade
 
   ✅ Created label: agent-ready
   ✅ Created label: needs-attention
-  ⏭ Config: max-ops.yaml already up to date
+  ⏭ Config: helm.toml already up to date
   ✅ Created: .devcontainer/devcontainer.json
   ⏭ Source of Truth: already exists
-  ✅ Created: .max-ops/
+  ✅ Created: .helm/
 
   3 changes applied, 2 skipped
 ```
@@ -313,7 +324,7 @@ Managers bring their own values — the pillars are fully configurable. A securi
 ## Architecture
 
 ```
-max-ops/
+gh-helm/
 ├── cmd/
 │   ├── project.go          # Project agent commands
 │   ├── manager.go          # Manager agent commands
@@ -330,8 +341,8 @@ max-ops/
 │   │   ├── models.go       # GitHub Models API (AI)
 │   │   └── search.go       # Search API
 │   ├── config/
-│   │   ├── project.go      # max-ops.yaml parsing
-│   │   └── manager.go      # manager-ops.yaml parsing
+│   │   ├── project.go      # helm.toml parsing
+│   │   └── manager.go      # helm-manager.toml parsing
 │   ├── notifications/
 │   │   ├── slack.go         # Slack integration
 │   │   ├── teams.go         # Teams integration
@@ -344,8 +355,8 @@ max-ops/
 │   │   └── source.go        # Source of truth document management
 │   └── output/
 │       └── output.go        # JSON/table/jq output
-├── max-ops.yaml.example
-├── manager-ops.yaml.example
+├── helm.toml.example
+├── helm-manager.toml.example
 ├── go.mod
 ├── Makefile
 └── README.md
@@ -355,38 +366,38 @@ max-ops/
 
 ### Project Agent
 ```bash
-max-ops project init                    # Create max-ops.yaml in current repo
-max-ops project start --issue 42        # Work one issue (local)
-max-ops project start --issue 42 --codespace  # Work in Codespace
-max-ops project daemon                  # Continuous: poll board, work items
-max-ops project status                  # Current agent status
-max-ops project sot                     # Show source of truth document
-max-ops project sot propose "New decision"  # Propose source of truth update
+gh helm project init                    # Create helm.toml in current repo
+gh helm project start --issue 42        # Work one issue (local)
+gh helm project start --issue 42 --codespace  # Work in Codespace
+gh helm project daemon                  # Continuous: poll board, work items
+gh helm project status                  # Current agent status
+gh helm project sot                     # Show source of truth document
+gh helm project sot propose "New decision"  # Propose source of truth update
 ```
 
 ### Manager Agent
 ```bash
-max-ops manager init                    # Create manager-ops.yaml
-max-ops manager start                   # Start monitoring
-max-ops manager pulse                   # One-shot team pulse
-max-ops manager prep <handle>           # Generate 1-1 prep for one person
-max-ops manager prep --all              # Prep for all reports
-max-ops manager observe                 # One-shot: generate observations, post to 1-1 repos
-max-ops manager pillars                 # Show pillar definitions
-max-ops manager report <handle>         # Full report card for a team member
+gh helm manager init                    # Create helm-manager.toml
+gh helm manager start                   # Start monitoring
+gh helm manager pulse                   # One-shot team pulse
+gh helm manager prep <handle>           # Generate 1-1 prep for one person
+gh helm manager prep --all              # Prep for all reports
+gh helm manager observe                 # One-shot: generate observations, post to 1-1 repos
+gh helm manager pillars                 # Show pillar definitions
+gh helm manager report <handle>         # Full report card for a team member
 ```
 
 ### Shared
 ```bash
-max-ops config show                     # Show current config
-max-ops version                         # Version info
+gh helm config show                     # Show current config
+gh helm version                         # Version info
 ```
 
 ## Integration with gh-planning
 
-`gh-planning` is the individual developer's CLI tool. `max-ops` is the orchestration platform. They complement each other:
+`gh-planning` is the individual developer's CLI tool. `gh-helm` is the orchestration platform. They complement each other:
 
-| gh-planning | max-ops |
+| gh-planning | gh-helm |
 |-------------|---------|
 | `status` — what's on my plate | `project status` — what's the agent doing |
 | `track` — create + track issue | `project start` — agent works the issue |
@@ -395,7 +406,7 @@ max-ops version                         # Version info
 | `prep` — 1-1 preparation | `manager prep` — automated, pillar-aware |
 | `team` — team dashboard | `manager pulse` — deeper, with pillar mapping |
 
-A developer might use `gh planning` for manual work and `max-ops project` for delegating to the agent. A manager uses `max-ops manager` for oversight.
+A developer might use `gh planning` for manual work and `gh helm project` for delegating to the agent. A manager uses `gh helm manager` for oversight.
 
 ## Open Source Philosophy
 
@@ -410,14 +421,14 @@ The goal is to make every engineering team more effective by putting agents on b
 ## Implementation Phases
 
 ### Phase 1: Project Agent MVP
-- [ ] `max-ops.yaml` config format
+- [ ] `helm.toml` config format
 - [ ] `project init` — scaffold config
 - [ ] `project start --issue N` — claim, break down, code, draft PR (local mode)
 - [ ] Source of truth document reading/proposing
 - [ ] Slack notification on PR ready
 
 ### Phase 2: Manager Agent MVP
-- [ ] `manager-ops.yaml` config format
+- [ ] `helm-manager.toml` config format
 - [ ] `manager observe` — one-shot observation generation
 - [ ] `manager prep` — 1-1 prep with pillar mapping
 - [ ] 1-1 repo posting

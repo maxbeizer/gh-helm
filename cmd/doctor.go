@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/maxbeizer/max-ops/internal/doctor"
-	"github.com/maxbeizer/max-ops/internal/output"
+	"github.com/maxbeizer/gh-helm/internal/doctor"
+	"github.com/maxbeizer/gh-helm/internal/output"
 	"github.com/spf13/cobra"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
-	Short: "Check project health and max-ops compliance",
+	Short: "Check project health and gh-helm compliance",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fix, _ := cmd.Flags().GetBool("fix")
 		result, err := doctor.Run(cmd.Context(), doctor.Options{Fix: fix})
@@ -25,7 +25,7 @@ var doctorCmd = &cobra.Command{
 			return out.Print(result)
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), "🏥 max-ops doctor — project health check")
+		fmt.Fprintln(cmd.OutOrStdout(), "🏥 gh-helm doctor — project health check")
 		fmt.Fprintln(cmd.OutOrStdout(), "")
 		for _, line := range formatDoctorChecks(result.Checks) {
 			fmt.Fprintln(cmd.OutOrStdout(), line)
@@ -33,7 +33,7 @@ var doctorCmd = &cobra.Command{
 		fmt.Fprintln(cmd.OutOrStdout(), "")
 		fmt.Fprintf(cmd.OutOrStdout(), "  Result: %d passed, %d warnings, %d failures\n", result.Summary.Passed, result.Summary.Warnings, result.Summary.Failures)
 		if result.Summary.Warnings > 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "  Run 'max-ops upgrade' to fix warnings automatically.")
+			fmt.Fprintln(cmd.OutOrStdout(), "  Run 'gh-helm upgrade' to fix warnings automatically.")
 		}
 		return nil
 	},
