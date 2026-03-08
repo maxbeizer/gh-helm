@@ -16,6 +16,7 @@ Agent         AgentConfig         `toml:"agent"`
 Notifications NotificationsConfig `toml:"notifications"`
 SourceOfTruth string              `toml:"source-of-truth"`
 Filters       FiltersConfig       `toml:"filters"`
+Codespace     CodespaceConfig     `toml:"codespace"`
 }
 
 type ProjectConfig struct {
@@ -38,6 +39,12 @@ WebhookURL string `toml:"webhook-url"`
 type FiltersConfig struct {
 Status string   `toml:"status"`
 Labels []string `toml:"labels"`
+}
+
+type CodespaceConfig struct {
+Enabled     bool   `toml:"enabled"`
+Machine     string `toml:"machine"`
+IdleTimeout string `toml:"idle-timeout"`
 }
 
 func Load(path string) (Config, error) {
