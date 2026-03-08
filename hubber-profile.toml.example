@@ -1,0 +1,17 @@
+# hubber-profile.toml — place in your 1-1 repo root
+# The project agent reads this to suggest work that matches your skills and growth.
+
+[skills]
+strong = ["go", "typescript", "api-design", "testing"]
+growing = ["rust", "security", "observability"]
+interested = ["ml-ops", "distributed-systems"]
+
+growth-areas = [
+    "Wants more cross-team visibility",
+    "Working toward senior promotion — needs large scope project",
+    "Interested in security work but hasn't had exposure",
+]
+
+[preferences]
+work-style = "Prefers deep focus over breadth"
+challenge-level = "Ready for stretch assignments"
