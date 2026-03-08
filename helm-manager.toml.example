@@ -1,6 +1,8 @@
 # helm-manager.toml — Manager Agent configuration
 # Place this wherever you run the manager agent (local machine, dedicated repo, etc.)
 
+version = 1
+
 [manager]
 hubber = "maxbeizer"
 

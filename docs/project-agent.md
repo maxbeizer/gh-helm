@@ -7,6 +7,8 @@ The project agent is an autonomous developer that claims issues, writes code, an
 Each project repo gets its own agent, configured with a `helm.toml` in the repo root:
 
 ```toml
+version = 1
+
 [project]
 board = 25                              # GitHub Projects v2 number
 owner = "myorg"                         # Project/org owner

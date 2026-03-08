@@ -1,0 +1,13 @@
+{
+  "instructions": [
+    "Read docs/SOURCE_OF_TRUTH.md before starting any work to understand current project state and decisions.",
+    "Run `go build ./...` after making changes to verify compilation.",
+    "Run `go test ./...` after making changes to verify tests pass.",
+    "Run `go vet ./...` to check for common issues."
+  ],
+  "commands": {
+    "build": "go build ./...",
+    "test": "go test ./...",
+    "lint": "go vet ./..."
+  }
+}

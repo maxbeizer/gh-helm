@@ -7,6 +7,8 @@ gh-helm uses TOML config files. There are two: one for project agents and one fo
 Lives in the project repo root. Created by `gh helm project init`.
 
 ```toml
+version = 1
+
 [project]
 board = 25                              # GitHub Projects v2 number
 owner = "myorg"                         # Project/org owner
@@ -32,6 +34,7 @@ labels = ["agent-ready"]                # Only claim issues with these labels
 
 | Section | Field | Required | Default | Description |
 |---------|-------|----------|---------|-------------|
+| — | `version` | yes | — | Config schema version (currently `1`) |
 | `project` | `board` | yes | — | GitHub Projects v2 board number |
 | `project` | `owner` | yes | — | GitHub org or user that owns the project |
 | `agent` | `hubber` | yes | — | GitHub handle of the developer running the agent |
@@ -49,6 +52,8 @@ labels = ["agent-ready"]                # Only claim issues with these labels
 Lives wherever you run the manager agent. Created by `gh helm manager init`.
 
 ```toml
+version = 1
+
 [manager]
 hubber = "maxbeizer"
 
@@ -96,6 +101,7 @@ observe = "0 2 * * 5"        # Weekly observations Friday night
 
 | Section | Field | Required | Default | Description |
 |---------|-------|----------|---------|-------------|
+| — | `version` | yes | — | Config schema version (currently `1`) |
 | `manager` | `hubber` | yes | — | GitHub handle of the manager |
 | `projects` | `owner` | yes | — | Org/user owning the project |
 | `projects` | `board` | yes | — | Projects v2 board number |

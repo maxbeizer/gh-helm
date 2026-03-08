@@ -97,6 +97,7 @@ var managerInitCmd = &cobra.Command{
 		}
 
 		cfg := config.ManagerConfig{
+			Version:  config.CurrentManagerConfigVersion,
 			Manager:  config.ManagerSettings{Hubber: hubber},
 			Projects: projects,
 			Team:     team,

@@ -9,6 +9,8 @@ The manager agent runs separately, configured across all your projects and repor
 ```toml
 # helm-manager.toml
 
+version = 1
+
 [manager]
 hubber = "maxbeizer"
 

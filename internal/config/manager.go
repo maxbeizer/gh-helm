@@ -7,7 +7,10 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+const CurrentManagerConfigVersion = 1
+
 type ManagerConfig struct {
+	Version       int                     `toml:"version"`
 	Manager       ManagerSettings         `toml:"manager"`
 	Projects      []ManagerProject        `toml:"projects"`
 	Team          []TeamMember            `toml:"team"`
@@ -50,6 +53,12 @@ func LoadManager(path string) (ManagerConfig, error) {
 	var cfg ManagerConfig
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return ManagerConfig{}, err
+	}
+	if cfg.Version == 0 {
+		return ManagerConfig{}, fmt.Errorf("missing 'version' field in %s, expected version = %d", path, CurrentManagerConfigVersion)
+	}
+	if cfg.Version != CurrentManagerConfigVersion {
+		return ManagerConfig{}, fmt.Errorf("unsupported config version %d in %s (expected %d), run 'gh helm upgrade' to migrate", cfg.Version, path, CurrentManagerConfigVersion)
 	}
 	return cfg, nil
 }

@@ -1,6 +1,8 @@
 # helm.toml — Project Agent configuration
 # Place this in the root of your project repo.
 
+version = 1
+
 [project]
 board = 25                          # GitHub Projects v2 number
 owner = "myorg"                     # Project/org owner

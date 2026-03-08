@@ -73,6 +73,7 @@ var projectInitCmd = &cobra.Command{
 		}
 
 		cfg := config.Config{
+			Version: config.CurrentConfigVersion,
 			Project: config.ProjectConfig{
 				Board: board,
 				Owner: owner,
