@@ -74,10 +74,16 @@ var tools = []ToolDefinition{
 		Name:        "helm_project_suggest",
 		Description: "Suggest work based on hubber profile — recommends issues that match the developer's skills and growth areas.",
 		InputSchema: objectSchema(map[string]interface{}{
-			"repo": stringProp("Repository owner/name"),
-		}, ""),
+			"repo":         stringProp("Repository owner/name"),
+			"profile-repo": stringProp("1-1 repo containing hubber-profile.toml (e.g. owner/hubber-1-1)"),
+		}, "profile-repo"),
 		Build: func(args map[string]interface{}) ([]string, error) {
 			cmd := []string{"project", "suggest"}
+			profileRepo, ok := getString(args, "profile-repo")
+			if !ok {
+				return nil, fmt.Errorf("profile-repo is required")
+			}
+			cmd = append(cmd, "--profile-repo", profileRepo)
 			return appendFlags(cmd, args, []flagDef{
 				{key: "repo", flag: "--repo"},
 			}), nil
