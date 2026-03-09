@@ -48,6 +48,35 @@ func FetchIssue(ctx context.Context, repo string, number int) (Issue, error) {
 	return issue, nil
 }
 
+// IssueListItem is a lightweight issue representation returned by ListIssues.
+type IssueListItem struct {
+	Number int    `json:"number"`
+	Title  string `json:"title"`
+	State  string `json:"state"`
+	URL    string `json:"url"`
+}
+
+// ListIssues returns issues for a repo filtered by state ("open", "closed", or "all").
+func ListIssues(ctx context.Context, repo, state string) ([]IssueListItem, error) {
+	slog.Debug("listing issues", "repo", repo, "state", state)
+	if state == "" {
+		state = "all"
+	}
+	args := []string{"issue", "list", "--state", state, "--json", "number,title,state,url", "--limit", "200"}
+	if repo != "" {
+		args = append(args, "--repo", repo)
+	}
+	out, err := runGh(ctx, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list issues: %w", err)
+	}
+	var items []IssueListItem
+	if err := json.Unmarshal(out, &items); err != nil {
+		return nil, fmt.Errorf("parse issue list: %w", err)
+	}
+	return items, nil
+}
+
 func CommentIssue(ctx context.Context, repo string, number int, body string) error {
 	args := []string{"issue", "comment", fmt.Sprint(number), "--body", body}
 	if repo != "" {
