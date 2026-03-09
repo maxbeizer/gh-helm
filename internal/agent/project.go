@@ -2,7 +2,7 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -213,22 +213,41 @@ func applyChanges(files []github.FileChange) error {
 }
 
 func createDraftPR(ctx context.Context, repo, title, body string) (int, string, error) {
-	args := []string{"pr", "create", "--draft", "--title", title, "--body", body, "--json", "number,url"}
+	args := []string{"pr", "create", "--draft", "--title", title, "--body", body}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
+	slog.Debug("creating draft PR", "title", title, "repo", repo)
 	out, err := runCmdOutput(ctx, "gh", args...)
 	if err != nil {
-		return 0, "", err
+		// Capture stderr for a better error message.
+		var exitErr *exec.ExitError
+		stderr := ""
+		if ok := errors.As(err, &exitErr); ok {
+			stderr = strings.TrimSpace(string(exitErr.Stderr))
+		}
+		if stderr != "" {
+			return 0, "", fmt.Errorf("create draft PR: %s", stderr)
+		}
+		return 0, "", fmt.Errorf("create draft PR: %w", err)
 	}
-	var payload struct {
-		Number int    `json:"number"`
-		URL    string `json:"url"`
+
+	// gh pr create outputs the PR URL to stdout (no --json support).
+	prURL := strings.TrimSpace(string(out))
+	slog.Debug("draft PR created", "url", prURL)
+
+	// Extract PR number from URL: .../pull/123
+	parts := strings.Split(prURL, "/")
+	prNumber := 0
+	for i, part := range parts {
+		if part == "pull" && i+1 < len(parts) {
+			fmt.Sscanf(parts[i+1], "%d", &prNumber)
+		}
 	}
-	if err := json.Unmarshal(out, &payload); err != nil {
-		return 0, "", err
+	if prNumber == 0 {
+		slog.Warn("could not parse PR number from URL", "url", prURL)
 	}
-	return payload.Number, payload.URL, nil
+	return prNumber, prURL, nil
 }
 
 func runCmd(ctx context.Context, name string, args ...string) error {
