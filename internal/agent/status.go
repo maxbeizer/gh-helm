@@ -48,6 +48,9 @@ func writeStatus(session string, issue github.Issue, pr PullRequest) error {
 func ReadStatus() (State, error) {
 	data, err := os.ReadFile(statusPath())
 	if err != nil {
+		if os.IsNotExist(err) {
+			return State{Session: "none", IssuesWorked: []IssueInfo{}, PullsCreated: []PullInfo{}}, nil
+		}
 		return State{}, err
 	}
 	var state State
