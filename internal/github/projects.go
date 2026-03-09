@@ -90,20 +90,33 @@ query($owner: String!, $number: Int!, $after: String) {
 		if err != nil {
 			return nil, err
 		}
-		// Normalize the JSON key to "owner" for uniform unmarshalling.
-		normalized := strings.Replace(string(out), fmt.Sprintf("%q:", ownerType), `"owner":`, 1)
-		var resp struct {
-			Owner *struct {
-				Project *projectV2 `json:"projectV2"`
-			} `json:"owner"`
-		}
-		if err := json.Unmarshal([]byte(normalized), &resp); err != nil {
+		// gh wraps in {"data": {...}}. Extract the owner-type payload.
+		var raw map[string]json.RawMessage
+		if err := json.Unmarshal(out, &raw); err != nil {
 			return nil, fmt.Errorf("parse project response: %w", err)
 		}
-		if resp.Owner == nil || resp.Owner.Project == nil {
+		payload := raw[ownerType]
+		if dataRaw, ok := raw["data"]; ok {
+			var data map[string]json.RawMessage
+			if err := json.Unmarshal(dataRaw, &data); err == nil {
+				if p, ok := data[ownerType]; ok {
+					payload = p
+				}
+			}
+		}
+		if payload == nil {
 			return nil, fmt.Errorf("project %d not found for %s %q", projectNumber, ownerType, owner)
 		}
-		return resp.Owner.Project, nil
+		var ownerNode struct {
+			Project *projectV2 `json:"projectV2"`
+		}
+		if err := json.Unmarshal(payload, &ownerNode); err != nil {
+			return nil, fmt.Errorf("parse project response: %w", err)
+		}
+		if ownerNode.Project == nil {
+			return nil, fmt.Errorf("project %d not found for %s %q", projectNumber, ownerType, owner)
+		}
+		return ownerNode.Project, nil
 	}
 
 	projectID := ""
