@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 )
 
 type Issue struct {
@@ -30,18 +31,20 @@ type User struct {
 }
 
 func FetchIssue(ctx context.Context, repo string, number int) (Issue, error) {
+	slog.Debug("fetching issue", "repo", repo, "number", number)
 	args := []string{"issue", "view", fmt.Sprint(number), "--json", "number,title,body,comments,labels,assignees,url,id"}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
 	out, err := runGh(ctx, args...)
 	if err != nil {
-		return Issue{}, err
+		return Issue{}, fmt.Errorf("fetch issue #%d: %w", number, err)
 	}
 	var issue Issue
 	if err := json.Unmarshal(out, &issue); err != nil {
-		return Issue{}, err
+		return Issue{}, fmt.Errorf("parse issue #%d response: %w", number, err)
 	}
+	slog.Debug("fetched issue", "number", issue.Number, "title", issue.Title, "nodeID", issue.NodeID, "labels", len(issue.Labels))
 	return issue, nil
 }
 

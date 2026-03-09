@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"strings"
 )
 
 type projectField struct {
@@ -35,43 +37,22 @@ type projectV2 struct {
 	} `json:"items"`
 }
 
-type projectQueryResponse struct {
-	Organization *struct {
-		Project *projectV2 `json:"projectV2"`
-	} `json:"organization"`
-	User *struct {
-		Project *projectV2 `json:"projectV2"`
-	} `json:"user"`
-}
-
 func MoveIssueToStatus(ctx context.Context, owner string, projectNumber int, issueNodeID string, status string) error {
-	// Fetch project fields and items in a single query. We paginate items
-	// with a generous first:100 to cover most boards; if the issue is not
-	// found in the first page we follow cursors.
-	query := `
+	slog.Debug("move issue to status",
+		"owner", owner, "project", projectNumber,
+		"issueNodeID", issueNodeID, "status", status)
+
+	// Detect whether owner is a user or organization.
+	info, err := FetchProjectInfo(ctx, owner, projectNumber)
+	if err != nil {
+		return fmt.Errorf("cannot find project %d for owner %q: %w", projectNumber, owner, err)
+	}
+	ownerType := info.OwnerScope
+	slog.Debug("resolved project owner", "ownerType", ownerType, "projectID", info.ID, "itemCount", info.ItemCount)
+
+	queryTmpl := `
 query($owner: String!, $number: Int!, $after: String) {
-  organization(login: $owner) {
-    projectV2(number: $number) {
-      id
-      fields(first: 50) {
-        nodes {
-          ... on ProjectV2SingleSelectField {
-            id
-            name
-            options { id name }
-          }
-        }
-      }
-      items(first: 100, after: $after) {
-        nodes {
-          id
-          content { __typename ... on Issue { id } ... on PullRequest { id } }
-        }
-        pageInfo { hasNextPage endCursor }
-      }
-    }
-  }
-  user(login: $owner) {
+  %s(login: $owner) {
     projectV2(number: $number) {
       id
       fields(first: 50) {
@@ -94,56 +75,78 @@ query($owner: String!, $number: Int!, $after: String) {
   }
 }
 `
-	projectID := ""
-	fieldID := ""
-	optionID := ""
-	itemID := ""
-	cursor := ""
 
-	for {
-		args := []string{"api", "graphql", "-f", "query=" + query, "-F", "owner=" + owner, "-F", fmt.Sprintf("number=%d", projectNumber)}
+	fetchPage := func(cursor string) (*projectV2, error) {
+		query := fmt.Sprintf(queryTmpl, ownerType)
+		args := []string{"api", "graphql", "-f", "query=" + query,
+			"-F", "owner=" + owner,
+			"-F", fmt.Sprintf("number=%d", projectNumber)}
 		if cursor != "" {
 			args = append(args, "-F", "after="+cursor)
 		} else {
 			args = append(args, "-F", "after=")
 		}
-
 		out, err := runGh(ctx, args...)
+		if err != nil {
+			return nil, err
+		}
+		// Normalize the JSON key to "owner" for uniform unmarshalling.
+		normalized := strings.Replace(string(out), fmt.Sprintf("%q:", ownerType), `"owner":`, 1)
+		var resp struct {
+			Owner *struct {
+				Project *projectV2 `json:"projectV2"`
+			} `json:"owner"`
+		}
+		if err := json.Unmarshal([]byte(normalized), &resp); err != nil {
+			return nil, fmt.Errorf("parse project response: %w", err)
+		}
+		if resp.Owner == nil || resp.Owner.Project == nil {
+			return nil, fmt.Errorf("project %d not found for %s %q", projectNumber, ownerType, owner)
+		}
+		return resp.Owner.Project, nil
+	}
+
+	projectID := ""
+	fieldID := ""
+	optionID := ""
+	itemID := ""
+	cursor := ""
+	pagesScanned := 0
+
+	for {
+		pagesScanned++
+		proj, err := fetchPage(cursor)
 		if err != nil {
 			return err
 		}
 
-		var resp projectQueryResponse
-		if err := json.Unmarshal(out, &resp); err != nil {
-			return err
-		}
-
-		holder := resp.Organization
-		if holder == nil || holder.Project == nil {
-			holder = resp.User
-		}
-		if holder == nil || holder.Project == nil {
-			return fmt.Errorf("project not found")
-		}
-
-		proj := holder.Project
 		if projectID == "" {
 			projectID = proj.ID
+			var statusNames []string
 			for _, field := range proj.Fields.Nodes {
 				if field.Name == "Status" {
 					fieldID = field.ID
 					for _, opt := range field.Options {
+						statusNames = append(statusNames, opt.Name)
 						if opt.Name == status {
 							optionID = opt.ID
 						}
 					}
 				}
 			}
+			slog.Debug("found project fields", "projectID", projectID, "statusFieldID", fieldID, "availableStatuses", statusNames)
+			if fieldID == "" {
+				return fmt.Errorf("project %d has no 'Status' field — is this a GitHub Projects v2 board?", projectNumber)
+			}
+			if optionID == "" {
+				return fmt.Errorf("status %q not found on project %d (available: %s)", status, projectNumber, strings.Join(statusNames, ", "))
+			}
 		}
 
 		for _, item := range proj.Items.Nodes {
 			if item.Content.ID == issueNodeID {
 				itemID = item.ID
+				slog.Debug("found issue on board", "itemID", itemID, "page", pagesScanned)
 				break
 			}
 		}
@@ -152,14 +155,16 @@ query($owner: String!, $number: Int!, $after: String) {
 			break
 		}
 		cursor = proj.Items.PageInfo.EndCursor
+		slog.Debug("scanning next page of items", "cursor", cursor, "page", pagesScanned)
 	}
 
-	if fieldID == "" || optionID == "" {
-		return fmt.Errorf("status field or option %q not found", status)
-	}
 	if itemID == "" {
-		return fmt.Errorf("issue not on project board")
+		return fmt.Errorf("issue (node %s) is not on project board %d — add it to the board first", issueNodeID, projectNumber)
 	}
+
+	slog.Debug("updating project item status",
+		"projectID", projectID, "itemID", itemID,
+		"fieldID", fieldID, "optionID", optionID)
 
 	mutation := `
 mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
@@ -173,6 +178,12 @@ mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
   }
 }
 `
-	_, err := runGh(ctx, "api", "graphql", "-f", "query="+mutation, "-F", "projectId="+projectID, "-F", "itemId="+itemID, "-F", "fieldId="+fieldID, "-F", "optionId="+optionID)
-	return err
+	_, err = runGh(ctx, "api", "graphql", "-f", "query="+mutation,
+		"-F", "projectId="+projectID, "-F", "itemId="+itemID,
+		"-F", "fieldId="+fieldID, "-F", "optionId="+optionID)
+	if err != nil {
+		return fmt.Errorf("update status to %q: %w", status, err)
+	}
+	slog.Debug("status updated successfully", "status", status)
+	return nil
 }
