@@ -21,9 +21,9 @@ func TestToolsRegistered(t *testing.T) {
 }
 
 func TestToolByName(t *testing.T) {
-	tool, ok := ToolByName("helm.project.start")
+	tool, ok := ToolByName("helm_project_start")
 	if !ok {
-		t.Fatal("helm.project.start not found")
+		t.Fatal("helm_project_start not found")
 	}
 	if tool.Description == "" {
 		t.Error("tool has no description")
@@ -38,7 +38,7 @@ func TestToolByNameMissing(t *testing.T) {
 }
 
 func TestProjectStartBuild(t *testing.T) {
-	tool, _ := ToolByName("helm.project.start")
+	tool, _ := ToolByName("helm_project_start")
 	args, err := tool.Build(map[string]interface{}{
 		"issue": float64(42),
 		"repo":  "maxbeizer/copilot-atc",
@@ -56,7 +56,7 @@ func TestProjectStartBuild(t *testing.T) {
 }
 
 func TestProjectStartBuildMissingIssue(t *testing.T) {
-	tool, _ := ToolByName("helm.project.start")
+	tool, _ := ToolByName("helm_project_start")
 	_, err := tool.Build(map[string]interface{}{})
 	if err == nil {
 		t.Fatal("expected error for missing issue")
@@ -64,7 +64,7 @@ func TestProjectStartBuildMissingIssue(t *testing.T) {
 }
 
 func TestManagerPrepBuild(t *testing.T) {
-	tool, _ := ToolByName("helm.manager.prep")
+	tool, _ := ToolByName("helm_manager_prep")
 	args, err := tool.Build(map[string]interface{}{
 		"handle": "sarah",
 	})

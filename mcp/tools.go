@@ -38,7 +38,7 @@ func ToolByName(name string) (*ToolDefinition, bool) {
 var tools = []ToolDefinition{
 	// Project agent tools
 	{
-		Name:        "helm.project.start",
+		Name:        "helm_project_start",
 		Description: "Claim a GitHub issue and generate a draft PR with AI-written code. The agent reads the issue, generates a plan, writes code, and pushes a draft PR.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"issue":     intProp("Issue number to work on"),
@@ -63,7 +63,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.project.status",
+		Name:        "helm_project_status",
 		Description: "Show what the project agent is currently working on, including active session, issue, and PR details.",
 		InputSchema: objectSchema(map[string]interface{}{}, ""),
 		Build: func(args map[string]interface{}) ([]string, error) {
@@ -71,7 +71,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.project.suggest",
+		Name:        "helm_project_suggest",
 		Description: "Suggest work based on hubber profile — recommends issues that match the developer's skills and growth areas.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"repo": stringProp("Repository owner/name"),
@@ -84,7 +84,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.project.sot",
+		Name:        "helm_project_sot",
 		Description: "View or propose updates to the project's source of truth document.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"propose": stringProp("Propose an update to the source of truth"),
@@ -97,7 +97,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.project.daemon",
+		Name:        "helm_project_daemon",
 		Description: "Start or query the continuous agent daemon that automatically picks up issues from the project board.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"status":       stringProp("Board status to watch (e.g. Ready, Todo)"),
@@ -116,7 +116,7 @@ var tools = []ToolDefinition{
 
 	// Manager agent tools
 	{
-		Name:        "helm.manager.pulse",
+		Name:        "helm_manager_pulse",
 		Description: "Team health overview — shows velocity, blockers, and activity patterns across the team.",
 		InputSchema: objectSchema(map[string]interface{}{}, ""),
 		Build: func(args map[string]interface{}) ([]string, error) {
@@ -124,7 +124,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.manager.prep",
+		Name:        "helm_manager_prep",
 		Description: "Generate 1-1 meeting prep for a team member — recent activity, contributions mapped to pillars, talking points.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"handle": stringProp("GitHub handle of the team member"),
@@ -138,7 +138,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.manager.observe",
+		Name:        "helm_manager_observe",
 		Description: "Generate weekly observations for the team — maps contributions to performance pillars, posts to 1-1 repos.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"dry-run": boolProp("Preview observations without posting"),
@@ -151,7 +151,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.manager.stats",
+		Name:        "helm_manager_stats",
 		Description: "Team and individual statistics — velocity, cycle time, bus factor, contribution distribution.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"handle": stringProp("GitHub handle (omit for full team)"),
@@ -164,7 +164,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.manager.report",
+		Name:        "helm_manager_report",
 		Description: "Full report card for a team member — pillar impact, growth trajectory, contributions summary.",
 		InputSchema: objectSchema(map[string]interface{}{
 			"handle": stringProp("GitHub handle of the team member"),
@@ -178,7 +178,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.manager.pillars",
+		Name:        "helm_manager_pillars",
 		Description: "Show configured performance pillar definitions and signal mappings.",
 		InputSchema: objectSchema(map[string]interface{}{}, ""),
 		Build: func(args map[string]interface{}) ([]string, error) {
@@ -188,7 +188,7 @@ var tools = []ToolDefinition{
 
 	// Config and operations tools
 	{
-		Name:        "helm.config.show",
+		Name:        "helm_config_show",
 		Description: "Display the current helm.toml or helm-manager.toml configuration.",
 		InputSchema: objectSchema(map[string]interface{}{}, ""),
 		Build: func(args map[string]interface{}) ([]string, error) {
@@ -196,7 +196,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.doctor",
+		Name:        "helm_doctor",
 		Description: "Validate project setup — checks config, source of truth, board access, labels, notifications, and auth.",
 		InputSchema: objectSchema(map[string]interface{}{}, ""),
 		Build: func(args map[string]interface{}) ([]string, error) {
@@ -204,7 +204,7 @@ var tools = []ToolDefinition{
 		},
 	},
 	{
-		Name:        "helm.upgrade",
+		Name:        "helm_upgrade",
 		Description: "Auto-fix issues found by doctor — creates missing labels, scaffolds devcontainer, initializes state directory.",
 		InputSchema: objectSchema(map[string]interface{}{}, ""),
 		Build: func(args map[string]interface{}) ([]string, error) {
