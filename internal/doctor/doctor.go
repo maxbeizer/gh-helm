@@ -26,6 +26,7 @@ type CheckResult struct {
 	Key     string `json:"key"`
 	Status  Status `json:"status"`
 	Message string `json:"message"`
+	Hint    string `json:"hint,omitempty"`
 }
 
 type Summary struct {
@@ -51,7 +52,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	checks := []CheckResult{}
 	cfg, cfgErr := config.Load("helm.toml")
 	if cfgErr != nil {
-		checks = append(checks, CheckResult{Key: "config", Status: StatusFail, Message: "helm.toml missing or invalid"})
+		checks = append(checks, CheckResult{Key: "config", Status: StatusFail, Message: "helm.toml missing or invalid", Hint: "Run 'gh helm project init' to create a default helm.toml, or check for syntax errors in your existing file"})
 	} else {
 		checks = append(checks, CheckResult{Key: "config", Status: StatusPass, Message: "helm.toml found and valid"})
 	}
@@ -69,32 +70,32 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 		if _, err := os.Stat(sotPath); err == nil {
 			checks = append(checks, CheckResult{Key: "source_of_truth", Status: StatusPass, Message: sotPath + " exists"})
 		} else {
-			checks = append(checks, CheckResult{Key: "source_of_truth", Status: StatusFail, Message: sotPath + " missing"})
+			checks = append(checks, CheckResult{Key: "source_of_truth", Status: StatusFail, Message: sotPath + " missing", Hint: "Create the file at " + sotPath + " or update the source-of-truth path in helm.toml"})
 		}
 
 		if cfg.Project.Owner != "" && cfg.Project.Board != 0 {
 			if info, err := github.FetchProjectInfo(ctx, cfg.Project.Owner, cfg.Project.Board); err == nil {
 				checks = append(checks, CheckResult{Key: "project_board", Status: StatusPass, Message: formatProjectBoardMessage(cfg.Project.Board, info.ItemCount)})
 			} else {
-				checks = append(checks, CheckResult{Key: "project_board", Status: StatusFail, Message: "project board not accessible"})
+				checks = append(checks, CheckResult{Key: "project_board", Status: StatusFail, Message: "project board not accessible", Hint: "Verify [project] owner and board number in helm.toml, and ensure your token has the read:project scope"})
 			}
 		} else {
-			checks = append(checks, CheckResult{Key: "project_board", Status: StatusWarn, Message: "project board not configured"})
+			checks = append(checks, CheckResult{Key: "project_board", Status: StatusWarn, Message: "project board not configured", Hint: "Add [project] owner and board number to helm.toml to enable project board integration"})
 		}
 
 		repo, repoErr := github.CurrentRepo(ctx)
 		if repoErr != nil {
-			checks = append(checks, CheckResult{Key: "labels", Status: StatusWarn, Message: "unable to resolve repo"})
+			checks = append(checks, CheckResult{Key: "labels", Status: StatusWarn, Message: "unable to resolve repo", Hint: "Run this command from inside a git repository, or check that the remote is a GitHub repo"})
 		} else {
 			labels, err := github.ListLabels(ctx, repo)
 			if err != nil {
-				checks = append(checks, CheckResult{Key: "labels", Status: StatusWarn, Message: "unable to list labels"})
+				checks = append(checks, CheckResult{Key: "labels", Status: StatusWarn, Message: "unable to list labels", Hint: "Ensure your token has the repo scope to read repository labels"})
 			} else {
 				missing := missingLabels(labels, requiredLabels)
 				if len(missing) == 0 {
 					checks = append(checks, CheckResult{Key: "labels", Status: StatusPass, Message: "all required labels present"})
 				} else {
-					checks = append(checks, CheckResult{Key: "labels", Status: StatusWarn, Message: "missing " + strings.Join(missing, ", ")})
+					checks = append(checks, CheckResult{Key: "labels", Status: StatusWarn, Message: "missing " + strings.Join(missing, ", "), Hint: "Run 'gh helm doctor --fix' to auto-create missing labels, or create them manually in your repo settings"})
 				}
 			}
 		}
@@ -102,7 +103,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 		if cfg.Notifications.WebhookURL != "" {
 			checks = append(checks, CheckResult{Key: "notifications", Status: StatusPass, Message: "webhook configured"})
 		} else {
-			checks = append(checks, CheckResult{Key: "notifications", Status: StatusWarn, Message: "webhook-url not configured"})
+			checks = append(checks, CheckResult{Key: "notifications", Status: StatusWarn, Message: "webhook-url not configured", Hint: "Add webhook-url under [notifications] in helm.toml to enable Slack notifications"})
 		}
 	}
 
@@ -182,13 +183,13 @@ func checkAuth(ctx context.Context) CheckResult {
 	time.Sleep(3 * time.Second)
 	out, err := github.RunWith(ctx, "auth", "status", "-h", "github.com")
 	if err != nil {
-		return CheckResult{Key: "auth", Status: StatusFail, Message: "gh auth not configured"}
+		return CheckResult{Key: "auth", Status: StatusFail, Message: "gh auth not configured", Hint: "Run 'gh auth login' to authenticate with GitHub"}
 	}
 	text := string(out)
 	line := "Token scopes:"
 	idx := strings.Index(text, line)
 	if idx == -1 {
-		return CheckResult{Key: "auth", Status: StatusWarn, Message: "token scopes not found"}
+		return CheckResult{Key: "auth", Status: StatusWarn, Message: "token scopes not found", Hint: "Run 'gh auth status' to verify your token, or re-authenticate with 'gh auth login'"}
 	}
 	chunk := text[idx+len(line):]
 	scopes := strings.Split(strings.TrimSpace(strings.Split(chunk, "\n")[0]), ",")
@@ -207,7 +208,7 @@ func checkAuth(ctx context.Context) CheckResult {
 		}
 	}
 	if len(missing) > 0 {
-		return CheckResult{Key: "auth", Status: StatusFail, Message: "missing scopes: " + strings.Join(missing, ", ")}
+		return CheckResult{Key: "auth", Status: StatusFail, Message: "missing scopes: " + strings.Join(missing, ", "), Hint: "Run 'gh auth login --scopes " + strings.Join(missing, ",") + "' to add the required scopes"}
 	}
 	return CheckResult{Key: "auth", Status: StatusPass, Message: "token has required scopes"}
 }
