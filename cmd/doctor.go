@@ -69,6 +69,9 @@ func formatDoctorChecks(checks []doctor.CheckResult) []string {
 		} else {
 			lines = append(lines, fmt.Sprintf("  %s %s", status, label))
 		}
+		if check.Hint != "" && (check.Status == doctor.StatusFail || check.Status == doctor.StatusWarn) {
+			lines = append(lines, fmt.Sprintf("     💡 %s", check.Hint))
+		}
 	}
 	return lines
 }
