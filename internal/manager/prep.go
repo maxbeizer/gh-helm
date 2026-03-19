@@ -19,7 +19,6 @@ type PrepResult struct {
 }
 
 func (m *Manager) Prep(ctx context.Context, opts PrepOptions) (PrepResult, error) {
-	ctx = ctxOrBackground(ctx)
 	sinceText := opts.Since
 	if sinceText == "" {
 		sinceText = "14d"

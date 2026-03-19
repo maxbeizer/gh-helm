@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"context"
 	"testing"
 	"time"
 )
@@ -140,19 +139,4 @@ func TestFormatRange(t *testing.T) {
 	}
 }
 
-func TestCtxOrBackground(t *testing.T) {
-	t.Run("nil returns background", func(t *testing.T) {
-		got := ctxOrBackground(nil)
-		if got == nil {
-			t.Fatal("expected non-nil context")
-		}
-	})
 
-	t.Run("non-nil returns same context", func(t *testing.T) {
-		ctx := context.WithValue(context.Background(), "key", "value")
-		got := ctxOrBackground(ctx)
-		if got != ctx {
-			t.Error("expected same context back")
-		}
-	})
-}

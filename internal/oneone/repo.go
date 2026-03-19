@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	gh "github.com/maxbeizer/gh-helm/internal/github"
 )
@@ -27,13 +28,13 @@ func FetchRecentObservations(ctx context.Context, repo string, limit int) ([]Obs
 	if limit <= 0 {
 		limit = 5
 	}
-	out, err := gh.RunWith(ctx, "issue", "list", "--repo", repo, "--limit", fmt.Sprintf("%d", limit), "--json", "number,title,createdAt,url", "--state", "all")
+	out, err := gh.RunWith(ctx, "issue", "list", "--repo", repo, "--limit", strconv.Itoa(limit), "--json", "number,title,createdAt,url", "--state", "all")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list observations from %s: %w", repo, err)
 	}
 	var issues []ObservationIssue
 	if err := json.Unmarshal(out, &issues); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse observations from %s: %w", repo, err)
 	}
 	return issues, nil
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 )
 
 type Issue struct {
@@ -32,7 +33,7 @@ type User struct {
 
 func FetchIssue(ctx context.Context, repo string, number int) (Issue, error) {
 	slog.Debug("fetching issue", "repo", repo, "number", number)
-	args := []string{"issue", "view", fmt.Sprint(number), "--json", "number,title,body,comments,labels,assignees,url,id"}
+	args := []string{"issue", "view", strconv.Itoa(number), "--json", "number,title,body,comments,labels,assignees,url,id"}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
@@ -78,10 +79,13 @@ func ListIssues(ctx context.Context, repo, state string) ([]IssueListItem, error
 }
 
 func CommentIssue(ctx context.Context, repo string, number int, body string) error {
-	args := []string{"issue", "comment", fmt.Sprint(number), "--body", body}
+	args := []string{"issue", "comment", strconv.Itoa(number), "--body", body}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
 	_, err := runGh(ctx, args...)
-	return err
+	if err != nil {
+		return fmt.Errorf("comment on issue #%d: %w", number, err)
+	}
+	return nil
 }

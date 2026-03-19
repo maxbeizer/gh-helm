@@ -411,8 +411,9 @@ func TestEnsureSourceOfTruth(t *testing.T) {
 		cfgContent := "version = 1\nsource-of-truth = \"docs/SOURCE_OF_TRUTH.md\"\n"
 		os.WriteFile(filepath.Join(dir, "helm.toml"), []byte(cfgContent), 0o644)
 
+		cfg := config.Config{SourceOfTruth: "docs/SOURCE_OF_TRUTH.md"}
 		var changes []Change
-		if err := ensureSourceOfTruth(false, &changes); err != nil {
+		if err := ensureSourceOfTruth(&cfg, false, &changes); err != nil {
 			t.Fatalf("ensureSourceOfTruth: %v", err)
 		}
 
@@ -440,8 +441,9 @@ func TestEnsureSourceOfTruth(t *testing.T) {
 		os.MkdirAll(filepath.Join(dir, "docs"), 0o755)
 		os.WriteFile(filepath.Join(dir, "docs", "SOT.md"), []byte("existing"), 0o644)
 
+		cfg := config.Config{SourceOfTruth: "docs/SOT.md"}
 		var changes []Change
-		if err := ensureSourceOfTruth(false, &changes); err != nil {
+		if err := ensureSourceOfTruth(&cfg, false, &changes); err != nil {
 			t.Fatalf("ensureSourceOfTruth: %v", err)
 		}
 
@@ -457,7 +459,7 @@ func TestEnsureSourceOfTruth(t *testing.T) {
 		os.Chdir(dir)
 
 		var changes []Change
-		if err := ensureSourceOfTruth(false, &changes); err != nil {
+		if err := ensureSourceOfTruth(nil, false, &changes); err != nil {
 			t.Fatalf("ensureSourceOfTruth: %v", err)
 		}
 
@@ -478,8 +480,9 @@ func TestEnsureSourceOfTruth(t *testing.T) {
 		cfgContent := "version = 1\nsource-of-truth = \"docs/SOURCE_OF_TRUTH.md\"\n"
 		os.WriteFile(filepath.Join(dir, "helm.toml"), []byte(cfgContent), 0o644)
 
+		cfg := config.Config{SourceOfTruth: "docs/SOURCE_OF_TRUTH.md"}
 		var changes []Change
-		if err := ensureSourceOfTruth(true, &changes); err != nil {
+		if err := ensureSourceOfTruth(&cfg, true, &changes); err != nil {
 			t.Fatalf("ensureSourceOfTruth: %v", err)
 		}
 
@@ -566,8 +569,14 @@ func TestRun_AppliesChanges(t *testing.T) {
 		return nil, nil
 	}
 
-	// Write config
-	cfgContent := "version = 1\nsource-of-truth = \"docs/SOURCE_OF_TRUTH.md\"\n"
+	// Write config with all required fields
+	cfgContent := `version = 1
+source-of-truth = "docs/SOURCE_OF_TRUTH.md"
+
+[project]
+board = 1
+owner = "test-owner"
+`
 	os.WriteFile(filepath.Join(dir, "helm.toml"), []byte(cfgContent), 0o644)
 
 	result, err := Run(context.Background(), Options{DryRun: false})

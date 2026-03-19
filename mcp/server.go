@@ -10,33 +10,35 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/maxbeizer/gh-helm/internal/version"
 )
 
 // JSON-RPC types
 
 type rpcRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
-	ID      interface{}     `json:"id"`
+	ID      any             `json:"id"`
 	Method  string          `json:"method"`
 	Params  json.RawMessage `json:"params,omitempty"`
 }
 
 type rpcResponse struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      interface{} `json:"id"`
-	Result  interface{} `json:"result,omitempty"`
+	JSONRPC string `json:"jsonrpc"`
+	ID      any    `json:"id"`
+	Result  any    `json:"result,omitempty"`
 	Error   *rpcError   `json:"error,omitempty"`
 }
 
 type rpcError struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
 }
 
 type toolCallParams struct {
-	Name      string                 `json:"name"`
-	Arguments map[string]interface{} `json:"arguments"`
+	Name      string         `json:"name"`
+	Arguments map[string]any `json:"arguments"`
 }
 
 // MCP content types
@@ -110,16 +112,16 @@ func (s *server) handleInitialize(req *rpcRequest) *rpcResponse {
 	return &rpcResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
-		Result: map[string]interface{}{
+		Result: map[string]any{
 			"protocolVersion": "2024-11-05",
-			"capabilities": map[string]interface{}{
-				"tools": map[string]interface{}{
+			"capabilities": map[string]any{
+				"tools": map[string]any{
 					"listChanged": false,
 				},
 			},
-			"serverInfo": map[string]interface{}{
+			"serverInfo": map[string]any{
 				"name":    "gh-helm",
-				"version": "0.1.0",
+				"version": version.Version,
 			},
 		},
 	}
@@ -127,9 +129,9 @@ func (s *server) handleInitialize(req *rpcRequest) *rpcResponse {
 
 func (s *server) handleToolsList(req *rpcRequest) *rpcResponse {
 	defs := Tools()
-	tools := make([]map[string]interface{}, len(defs))
+	tools := make([]map[string]any, len(defs))
 	for i, t := range defs {
-		tools[i] = map[string]interface{}{
+		tools[i] = map[string]any{
 			"name":        t.Name,
 			"description": t.Description,
 			"inputSchema": t.InputSchema,
@@ -138,7 +140,7 @@ func (s *server) handleToolsList(req *rpcRequest) *rpcResponse {
 	return &rpcResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
-		Result:  map[string]interface{}{"tools": tools},
+		Result:  map[string]any{"tools": tools},
 	}
 }
 
@@ -203,7 +205,7 @@ func runGhHelm(args []string) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-func errorResponse(id interface{}, code int, message string, data interface{}) *rpcResponse {
+func errorResponse(id any, code int, message string, data any) *rpcResponse {
 	return &rpcResponse{
 		JSONRPC: "2.0",
 		ID:      id,

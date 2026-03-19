@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -74,13 +73,6 @@ func formatRange(start, end time.Time) string {
 
 func now() time.Time {
 	return time.Now()
-}
-
-func ctxOrBackground(ctx context.Context) context.Context {
-	if ctx == nil {
-		return context.Background()
-	}
-	return ctx
 }
 
 func (m *Manager) mapItem(item pillars.ActivityItem, configs map[string]config.PillarConfig) []pillars.PillarMatch {

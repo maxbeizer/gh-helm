@@ -24,7 +24,6 @@ type PulseResult struct {
 }
 
 func (m *Manager) Pulse(ctx context.Context, opts PulseOptions) (PulseResult, error) {
-	ctx = ctxOrBackground(ctx)
 	sinceText := opts.Since
 	if sinceText == "" {
 		sinceText = "30d"

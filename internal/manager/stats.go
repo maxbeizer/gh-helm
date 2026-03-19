@@ -43,7 +43,6 @@ type BusFactorEntry struct {
 }
 
 func (m *Manager) Stats(ctx context.Context, opts StatsOptions) (TeamStats, error) {
-	ctx = ctxOrBackground(ctx)
 	sinceText := opts.Since
 	if sinceText == "" {
 		sinceText = "30d"

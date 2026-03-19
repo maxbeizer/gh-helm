@@ -29,7 +29,6 @@ type activityData struct {
 }
 
 func (m *Manager) Observe(ctx context.Context, opts ObserveOptions) ([]ObservationResult, error) {
-	ctx = ctxOrBackground(ctx)
 	sinceText := opts.Since
 	if sinceText == "" {
 		sinceText = "7d"

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -61,7 +62,7 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 		model = "gpt-4o"
 	}
 
-	session := fmt.Sprintf("%d", time.Now().Unix())
+	session := strconv.FormatInt(time.Now().Unix(), 10)
 
 	issue, err := github.FetchIssue(ctx, opts.Repo, opts.IssueNumber)
 	if err != nil {

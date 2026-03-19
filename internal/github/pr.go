@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 )
 
 // PR holds pull request metadata.
@@ -20,7 +21,7 @@ type PR struct {
 // FetchPR retrieves pull request metadata.
 func FetchPR(ctx context.Context, repo string, number int) (PR, error) {
 	slog.Debug("fetching PR", "repo", repo, "number", number)
-	args := []string{"pr", "view", fmt.Sprint(number), "--json", "number,title,body,state,url"}
+	args := []string{"pr", "view", strconv.Itoa(number), "--json", "number,title,body,state,url"}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
@@ -38,7 +39,7 @@ func FetchPR(ctx context.Context, repo string, number int) (PR, error) {
 // FetchPRDiff retrieves the diff for a pull request.
 func FetchPRDiff(ctx context.Context, repo string, number int) (string, error) {
 	slog.Debug("fetching PR diff", "repo", repo, "number", number)
-	args := []string{"pr", "diff", fmt.Sprint(number)}
+	args := []string{"pr", "diff", strconv.Itoa(number)}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
@@ -52,7 +53,7 @@ func FetchPRDiff(ctx context.Context, repo string, number int) (string, error) {
 // FetchPRClosingIssues returns issue numbers that a PR will close on merge.
 func FetchPRClosingIssues(ctx context.Context, repo string, number int) ([]int, error) {
 	slog.Debug("fetching PR closing issues", "repo", repo, "number", number)
-	args := []string{"pr", "view", fmt.Sprint(number), "--json", "closingIssuesReferences", "--jq", ".[\"closingIssuesReferences\"].[].number"}
+	args := []string{"pr", "view", strconv.Itoa(number), "--json", "closingIssuesReferences", "--jq", ".[\"closingIssuesReferences\"].[].number"}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}

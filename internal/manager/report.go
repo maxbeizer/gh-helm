@@ -63,7 +63,6 @@ type ReportResult struct {
 }
 
 func (m *Manager) Report(ctx context.Context, opts ReportOptions) (ReportResult, error) {
-	ctx = ctxOrBackground(ctx)
 	sinceText := opts.Since
 	if sinceText == "" {
 		sinceText = "90d"

@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +59,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 				color := labelColors[label]
 				desc := "gh-helm required label"
 				if err := github.CreateLabel(ctx, repo, label, color, desc); err != nil {
-					return Result{}, err
+					return Result{}, fmt.Errorf("create label %q: %w", label, err)
 				}
 				changes = append(changes, Change{Status: StatusApplied, Message: "Created label: " + label})
 			}
@@ -70,7 +71,9 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	}
 
 	cfg, cfgErr := config.Load("helm.toml")
+	var cfgPtr *config.Config
 	if cfgErr == nil {
+		cfgPtr = &cfg
 		missingSOT := configFieldMissing("helm.toml", "source-of-truth")
 		updated, changed := mergeDefaults(cfg, missingSOT)
 		if changed {
@@ -78,7 +81,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 				changes = append(changes, Change{Status: StatusSkipped, Message: "Config: would update helm.toml"})
 			} else {
 				if err := config.Write("helm.toml", updated); err != nil {
-					return Result{}, err
+					return Result{}, fmt.Errorf("write config: %w", err)
 				}
 				changes = append(changes, Change{Status: StatusApplied, Message: "Config: updated helm.toml"})
 			}
@@ -90,15 +93,15 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	}
 
 	if err := ensureDevcontainer(opts.DryRun, &changes); err != nil {
-		return Result{}, err
+		return Result{}, fmt.Errorf("ensure devcontainer: %w", err)
 	}
 
-	if err := ensureSourceOfTruth(opts.DryRun, &changes); err != nil {
-		return Result{}, err
+	if err := ensureSourceOfTruth(cfgPtr, opts.DryRun, &changes); err != nil {
+		return Result{}, fmt.Errorf("ensure source of truth: %w", err)
 	}
 
 	if err := ensureStateDir(opts.DryRun, &changes); err != nil {
-		return Result{}, err
+		return Result{}, fmt.Errorf("ensure state directory: %w", err)
 	}
 
 	result := Result{Changes: changes}
@@ -156,18 +159,17 @@ func ensureDevcontainer(dryRun bool, changes *[]Change) error {
 		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
+		return fmt.Errorf("create devcontainer directory: %w", err)
 	}
 	if err := os.WriteFile(path, []byte(devcontainerTemplate), 0o644); err != nil {
-		return err
+		return fmt.Errorf("write devcontainer config: %w", err)
 	}
 	*changes = append(*changes, Change{Status: StatusApplied, Message: "Created: .devcontainer/devcontainer.json"})
 	return nil
 }
 
-func ensureSourceOfTruth(dryRun bool, changes *[]Change) error {
-	cfg, err := config.Load("helm.toml")
-	if err != nil {
+func ensureSourceOfTruth(cfg *config.Config, dryRun bool, changes *[]Change) error {
+	if cfg == nil {
 		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Source of Truth: config missing"})
 		return nil
 	}
@@ -184,10 +186,10 @@ func ensureSourceOfTruth(dryRun bool, changes *[]Change) error {
 		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
+		return fmt.Errorf("create source of truth directory: %w", err)
 	}
 	if err := os.WriteFile(path, []byte(sourceOfTruthTemplate), 0o644); err != nil {
-		return err
+		return fmt.Errorf("write source of truth: %w", err)
 	}
 	*changes = append(*changes, Change{Status: StatusApplied, Message: "Created: " + path})
 	return nil
@@ -204,7 +206,7 @@ func ensureStateDir(dryRun bool, changes *[]Change) error {
 		return nil
 	}
 	if err := os.MkdirAll(path, 0o755); err != nil {
-		return err
+		return fmt.Errorf("create state directory: %w", err)
 	}
 	*changes = append(*changes, Change{Status: StatusApplied, Message: "Created: .helm/"})
 	return nil
