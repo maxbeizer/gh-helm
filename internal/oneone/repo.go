@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os/exec"
+
+	gh "github.com/maxbeizer/gh-helm/internal/github"
 )
 
 type ObservationIssue struct {
@@ -15,8 +16,7 @@ type ObservationIssue struct {
 }
 
 func PostObservation(ctx context.Context, handle, repo, title, body string) error {
-	cmd := exec.CommandContext(ctx, "gh", "issue", "create", "--repo", repo, "--title", title, "--body", body)
-	out, err := cmd.CombinedOutput()
+	out, err := gh.RunWith(ctx, "issue", "create", "--repo", repo, "--title", title, "--body", body)
 	if err != nil {
 		return fmt.Errorf("gh issue create: %w (%s)", err, string(out))
 	}
@@ -27,8 +27,7 @@ func FetchRecentObservations(ctx context.Context, repo string, limit int) ([]Obs
 	if limit <= 0 {
 		limit = 5
 	}
-	cmd := exec.CommandContext(ctx, "gh", "issue", "list", "--repo", repo, "--limit", fmt.Sprintf("%d", limit), "--json", "number,title,createdAt,url", "--state", "all")
-	out, err := cmd.Output()
+	out, err := gh.RunWith(ctx, "issue", "list", "--repo", repo, "--limit", fmt.Sprintf("%d", limit), "--json", "number,title,createdAt,url", "--state", "all")
 	if err != nil {
 		return nil, err
 	}

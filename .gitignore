@@ -23,6 +23,9 @@ gh-helm
 *.test
 *.out
 
+# Environment
+.env
+
 # Misc
 .todos/
 .sidecar/

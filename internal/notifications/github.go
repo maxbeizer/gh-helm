@@ -6,6 +6,13 @@ import (
 	"os/exec"
 )
 
+// RunFunc executes a gh CLI command. Override in tests to mock.
+var RunFunc = defaultRun
+
+func defaultRun(ctx context.Context, args ...string) error {
+	return exec.CommandContext(ctx, "gh", args...).Run()
+}
+
 type GitHubNotifier struct {
 	Repo        string
 	IssueNumber int
@@ -17,6 +24,5 @@ func (g *GitHubNotifier) Notify(ctx context.Context, msg Message) error {
 	if g.Repo != "" {
 		args = append(args, "--repo", g.Repo)
 	}
-	cmd := exec.CommandContext(ctx, "gh", args...)
-	return cmd.Run()
+	return RunFunc(ctx, args...)
 }

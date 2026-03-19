@@ -24,7 +24,7 @@ board = 25
 owner = "myorg"
 
 [agent]
-user = "testhubber"
+user = "testuser"
 model = "gpt-4"
 max-per-hour = 10
 
@@ -48,8 +48,8 @@ labels = ["bug", "feature"]
 				if cfg.Project.Owner != "myorg" {
 					t.Errorf("Owner = %q, want %q", cfg.Project.Owner, "myorg")
 				}
-				if cfg.Agent.User != "testhubber" {
-					t.Errorf("User = %q, want %q", cfg.Agent.User, "testhubber")
+				if cfg.Agent.User != "testuser" {
+					t.Errorf("User = %q, want %q", cfg.Agent.User, "testuser")
 				}
 				if cfg.Agent.Model != "gpt-4" {
 					t.Errorf("Model = %q, want %q", cfg.Agent.Model, "gpt-4")
