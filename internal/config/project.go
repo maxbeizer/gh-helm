@@ -61,7 +61,31 @@ return Config{}, fmt.Errorf("unsupported config version %d in %s (expected %d), 
 if cfg.SourceOfTruth == "" {
 cfg.SourceOfTruth = "docs/SOURCE_OF_TRUTH.md"
 }
+if err := cfg.Validate(); err != nil {
+return Config{}, fmt.Errorf("invalid config in %s: %w", path, err)
+}
 return cfg, nil
+}
+
+func (c *Config) Validate() error {
+if c.Project.Board <= 0 {
+return fmt.Errorf("project.board must be greater than 0")
+}
+if c.Project.Owner == "" {
+return fmt.Errorf("project.owner must be non-empty")
+}
+if c.Agent.MaxPerHour < 0 {
+return fmt.Errorf("agent.max-per-hour must be >= 0")
+}
+switch c.Notifications.Channel {
+case "", "slack", "github":
+default:
+return fmt.Errorf("notifications.channel must be one of: \"\", \"slack\", \"github\"")
+}
+if c.Notifications.Channel == "slack" && c.Notifications.WebhookURL == "" {
+return fmt.Errorf("notifications.webhook-url is required when channel is \"slack\"")
+}
+return nil
 }
 
 func WriteDefault(path string) error {

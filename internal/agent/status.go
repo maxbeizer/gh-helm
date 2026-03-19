@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -58,7 +59,7 @@ func writeStatus(session string, issue github.Issue, pr PullRequest) error {
 
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal status: %w", err)
 	}
 	return state.WriteAtomic(statusPath(), data, 0o644)
 }
@@ -69,11 +70,11 @@ func ReadStatus() (State, error) {
 		if os.IsNotExist(err) {
 			return State{Session: "none", IssuesWorked: []IssueInfo{}, PullsCreated: []PullInfo{}}, nil
 		}
-		return State{}, err
+		return State{}, fmt.Errorf("read status file: %w", err)
 	}
 	var state State
 	if err := json.Unmarshal(data, &state); err != nil {
-		return State{}, err
+		return State{}, fmt.Errorf("parse status file: %w", err)
 	}
 	return state, nil
 }

@@ -60,7 +60,25 @@ func LoadManager(path string) (ManagerConfig, error) {
 	if cfg.Version != CurrentManagerConfigVersion {
 		return ManagerConfig{}, fmt.Errorf("unsupported config version %d in %s (expected %d), run 'gh helm upgrade' to migrate", cfg.Version, path, CurrentManagerConfigVersion)
 	}
+	if err := cfg.Validate(); err != nil {
+		return ManagerConfig{}, fmt.Errorf("invalid config in %s: %w", path, err)
+	}
 	return cfg, nil
+}
+
+func (c *ManagerConfig) Validate() error {
+	if c.Manager.User == "" {
+		return fmt.Errorf("manager.user must be non-empty")
+	}
+	if len(c.Team) == 0 {
+		return fmt.Errorf("team must have at least one member")
+	}
+	for i, member := range c.Team {
+		if member.OneOneRepo == "" {
+			return fmt.Errorf("team[%d].one-one-repo must be non-empty (handle: %q)", i, member.Handle)
+		}
+	}
+	return nil
 }
 
 func WriteManager(path string, cfg ManagerConfig) error {

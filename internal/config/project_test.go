@@ -29,7 +29,7 @@ model = "gpt-4"
 max-per-hour = 10
 
 [notifications]
-channel = "#general"
+channel = "slack"
 ops-channel = "#ops"
 webhook-url = "https://example.com/hook"
 
@@ -57,8 +57,8 @@ labels = ["bug", "feature"]
 				if cfg.Agent.MaxPerHour != 10 {
 					t.Errorf("MaxPerHour = %d, want 10", cfg.Agent.MaxPerHour)
 				}
-				if cfg.Notifications.Channel != "#general" {
-					t.Errorf("Channel = %q, want %q", cfg.Notifications.Channel, "#general")
+				if cfg.Notifications.Channel != "slack" {
+					t.Errorf("Channel = %q, want %q", cfg.Notifications.Channel, "slack")
 				}
 				if cfg.Notifications.OpsChannel != "#ops" {
 					t.Errorf("OpsChannel = %q, want %q", cfg.Notifications.OpsChannel, "#ops")
@@ -170,7 +170,7 @@ func TestWriteLoadRoundtrip(t *testing.T) {
 			MaxPerHour: 5,
 		},
 		Notifications: NotificationsConfig{
-			Channel:    "#test",
+			Channel:    "slack",
 			OpsChannel: "#test-ops",
 			WebhookURL: "https://hook.example.com",
 		},
@@ -210,5 +210,121 @@ func TestWriteLoadRoundtrip(t *testing.T) {
 	}
 	if loaded.SourceOfTruth != original.SourceOfTruth {
 		t.Errorf("SourceOfTruth = %q, want %q", loaded.SourceOfTruth, original.SourceOfTruth)
+	}
+}
+
+func TestConfigValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     Config
+		wantErr string
+	}{
+		{
+			name: "valid minimal",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 1, Owner: "org"},
+			},
+		},
+		{
+			name: "board zero",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 0, Owner: "org"},
+			},
+			wantErr: "project.board must be greater than 0",
+		},
+		{
+			name: "board negative",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: -1, Owner: "org"},
+			},
+			wantErr: "project.board must be greater than 0",
+		},
+		{
+			name: "owner empty",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 1, Owner: ""},
+			},
+			wantErr: "project.owner must be non-empty",
+		},
+		{
+			name: "negative max-per-hour",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 1, Owner: "org"},
+				Agent:   AgentConfig{MaxPerHour: -1},
+			},
+			wantErr: "agent.max-per-hour must be >= 0",
+		},
+		{
+			name: "zero max-per-hour is valid",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 1, Owner: "org"},
+				Agent:   AgentConfig{MaxPerHour: 0},
+			},
+		},
+		{
+			name: "invalid channel",
+			cfg: Config{
+				Version:       1,
+				Project:       ProjectConfig{Board: 1, Owner: "org"},
+				Notifications: NotificationsConfig{Channel: "email"},
+			},
+			wantErr: "notifications.channel must be one of",
+		},
+		{
+			name: "slack channel without webhook",
+			cfg: Config{
+				Version:       1,
+				Project:       ProjectConfig{Board: 1, Owner: "org"},
+				Notifications: NotificationsConfig{Channel: "slack", WebhookURL: ""},
+			},
+			wantErr: "notifications.webhook-url is required",
+		},
+		{
+			name: "slack channel with webhook",
+			cfg: Config{
+				Version:       1,
+				Project:       ProjectConfig{Board: 1, Owner: "org"},
+				Notifications: NotificationsConfig{Channel: "slack", WebhookURL: "https://hooks.slack.com/xxx"},
+			},
+		},
+		{
+			name: "github channel valid",
+			cfg: Config{
+				Version:       1,
+				Project:       ProjectConfig{Board: 1, Owner: "org"},
+				Notifications: NotificationsConfig{Channel: "github"},
+			},
+		},
+		{
+			name: "empty channel valid",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 1, Owner: "org"},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cfg.Validate()
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatalf("expected error containing %q, got nil", tc.wantErr)
+				}
+				if !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("error = %q, want substring %q", err.Error(), tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
 	}
 }

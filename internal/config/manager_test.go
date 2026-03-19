@@ -203,3 +203,91 @@ func TestWriteManagerLoadRoundtrip(t *testing.T) {
 		t.Errorf("reliability.Description = %q, want %q", rel.Description, "Uptime")
 	}
 }
+
+func TestManagerConfigValidate(t *testing.T) {
+	validTeam := []TeamMember{
+		{Handle: "alice", OneOneRepo: "org/1on1-alice"},
+	}
+
+	tests := []struct {
+		name    string
+		cfg     ManagerConfig
+		wantErr string
+	}{
+		{
+			name: "valid minimal",
+			cfg: ManagerConfig{
+				Version: 1,
+				Manager: ManagerSettings{User: "lead"},
+				Team:    validTeam,
+			},
+		},
+		{
+			name: "empty user",
+			cfg: ManagerConfig{
+				Version: 1,
+				Manager: ManagerSettings{User: ""},
+				Team:    validTeam,
+			},
+			wantErr: "manager.user must be non-empty",
+		},
+		{
+			name: "empty team",
+			cfg: ManagerConfig{
+				Version: 1,
+				Manager: ManagerSettings{User: "lead"},
+				Team:    []TeamMember{},
+			},
+			wantErr: "team must have at least one member",
+		},
+		{
+			name: "nil team",
+			cfg: ManagerConfig{
+				Version: 1,
+				Manager: ManagerSettings{User: "lead"},
+			},
+			wantErr: "team must have at least one member",
+		},
+		{
+			name: "empty one-one-repo",
+			cfg: ManagerConfig{
+				Version: 1,
+				Manager: ManagerSettings{User: "lead"},
+				Team: []TeamMember{
+					{Handle: "alice", OneOneRepo: "org/1on1-alice"},
+					{Handle: "bob", OneOneRepo: ""},
+				},
+			},
+			wantErr: "team[1].one-one-repo must be non-empty",
+		},
+		{
+			name: "multiple valid members",
+			cfg: ManagerConfig{
+				Version: 1,
+				Manager: ManagerSettings{User: "lead"},
+				Team: []TeamMember{
+					{Handle: "alice", OneOneRepo: "org/1on1-alice"},
+					{Handle: "bob", OneOneRepo: "org/1on1-bob"},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cfg.Validate()
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatalf("expected error containing %q, got nil", tc.wantErr)
+				}
+				if !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("error = %q, want substring %q", err.Error(), tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
