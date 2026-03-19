@@ -34,7 +34,7 @@ type projectInfoResponse struct {
 
 func FetchProjectInfo(ctx context.Context, owner string, number int) (ProjectInfo, error) {
 	slog.Debug("fetching project info", "owner", owner, "project", number)
-	sleepRateLimit()
+	sleepRateLimit(ctx)
 
 	type projectNode struct {
 		ID    string `json:"id"`

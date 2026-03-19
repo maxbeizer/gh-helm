@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 )
 
 type labelInfo struct {
@@ -11,27 +12,27 @@ type labelInfo struct {
 }
 
 func CurrentRepo(ctx context.Context) (string, error) {
-	sleepRateLimit()
+	sleepRateLimit(ctx)
 	out, err := runGh(ctx, "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("fetch current repo: %w", err)
 	}
 	return string(bytes.TrimSpace(out)), nil
 }
 
 func ListLabels(ctx context.Context, repo string) ([]string, error) {
-	sleepRateLimit()
+	sleepRateLimit(ctx)
 	args := []string{"label", "list", "--json", "name"}
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
 	out, err := runGh(ctx, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("list labels: %w", err)
 	}
 	var labels []labelInfo
 	if err := json.Unmarshal(out, &labels); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse labels: %w", err)
 	}
 	results := make([]string, 0, len(labels))
 	for _, label := range labels {
@@ -43,7 +44,7 @@ func ListLabels(ctx context.Context, repo string) ([]string, error) {
 }
 
 func CreateLabel(ctx context.Context, repo string, name string, color string, description string) error {
-	sleepRateLimit()
+	sleepRateLimit(ctx)
 	args := []string{"label", "create", name}
 	if repo != "" {
 		args = append(args, "--repo", repo)
@@ -55,5 +56,8 @@ func CreateLabel(ctx context.Context, repo string, name string, color string, de
 		args = append(args, "--description", description)
 	}
 	_, err := runGh(ctx, args...)
-	return err
+	if err != nil {
+		return fmt.Errorf("create label %q: %w", name, err)
+	}
+	return nil
 }

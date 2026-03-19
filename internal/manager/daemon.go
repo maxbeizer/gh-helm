@@ -11,10 +11,6 @@ import (
 	"github.com/maxbeizer/gh-helm/internal/config"
 )
 
-type Logger interface {
-	Printf(format string, args ...any)
-}
-
 type scheduleEntry struct {
 	Minute int
 	Hour   int
@@ -28,7 +24,7 @@ type scheduleSet struct {
 	Observe *scheduleEntry
 }
 
-func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger Logger) error {
+func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger *slog.Logger) error {
 	mgr, err := Load(cfgConfigPath)
 	if err != nil {
 		return err
@@ -44,27 +40,27 @@ func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger Logger) 
 
 	logf := func(format string, args ...any) { slog.Info(fmt.Sprintf(format, args...)) }
 	if logger != nil {
-		logf = logger.Printf
+		logf = func(format string, args ...any) { logger.Info(fmt.Sprintf(format, args...)) }
 	}
 
 	lastRun := map[string]time.Time{}
 	logf("manager daemon started")
 
 	for {
-		now := time.Now()
-		if sched.Pulse != nil && sched.Pulse.Due(now) && !alreadyRan(lastRun, "pulse", now) {
+		current := now()
+		if sched.Pulse != nil && sched.Pulse.Due(current) && !alreadyRan(lastRun, "pulse", current) {
 			if _, err := mgr.Pulse(ctx, PulseOptions{Since: "30d"}); err != nil {
 				logf("pulse error: %v", err)
 			}
-			lastRun["pulse"] = now
+			lastRun["pulse"] = current
 		}
-		if sched.Observe != nil && sched.Observe.Due(now) && !alreadyRan(lastRun, "observe", now) {
+		if sched.Observe != nil && sched.Observe.Due(current) && !alreadyRan(lastRun, "observe", current) {
 			if _, err := mgr.Observe(ctx, ObserveOptions{Since: "7d"}); err != nil {
 				logf("observe error: %v", err)
 			}
-			lastRun["observe"] = now
+			lastRun["observe"] = current
 		}
-		if sched.Prep != nil && sched.Prep.Due(now) && !alreadyRan(lastRun, "prep", now) {
+		if sched.Prep != nil && sched.Prep.Due(current) && !alreadyRan(lastRun, "prep", current) {
 			for _, member := range mgr.Config.Team {
 				if member.Handle == "" {
 					continue
@@ -73,7 +69,7 @@ func RunManagerDaemon(ctx context.Context, cfgConfigPath string, logger Logger) 
 					logf("prep error for %s: %v", member.Handle, err)
 				}
 			}
-			lastRun["prep"] = now
+			lastRun["prep"] = current
 		}
 
 		select {

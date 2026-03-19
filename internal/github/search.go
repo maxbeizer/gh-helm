@@ -27,7 +27,7 @@ type searchResponse struct {
 }
 
 func SearchIssues(ctx context.Context, query string) ([]SearchItem, error) {
-	sleepRateLimit()
+	sleepRateLimit(ctx)
 	out, err := runGh(ctx, "api", "search/issues", "-f", "q="+query)
 	if err != nil {
 		return nil, err
@@ -40,8 +40,8 @@ func SearchIssues(ctx context.Context, query string) ([]SearchItem, error) {
 }
 
 func PullFiles(ctx context.Context, repo string, number int) ([]string, error) {
-	sleepRateLimit()
-	endpoint := "repos/" + repo + "/pulls/" + itoa(number) + "/files"
+	sleepRateLimit(ctx)
+	endpoint := "repos/" + repo + "/pulls/" + strconv.Itoa(number) + "/files"
 	out, err := runGh(ctx, "api", endpoint, "-f", "per_page=100")
 	if err != nil {
 		return nil, err
@@ -67,10 +67,9 @@ func RepoFromURL(repoURL string) string {
 
 var apiDelay = 500 * time.Millisecond
 
-func sleepRateLimit() {
-	time.Sleep(apiDelay)
-}
-
-func itoa(v int) string {
-	return strconv.Itoa(v)
+func sleepRateLimit(ctx context.Context) {
+	select {
+	case <-time.After(apiDelay):
+	case <-ctx.Done():
+	}
 }

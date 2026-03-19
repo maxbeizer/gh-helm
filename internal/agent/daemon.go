@@ -17,10 +17,6 @@ import (
 	"github.com/maxbeizer/gh-helm/internal/notifications"
 )
 
-type Logger interface {
-	Printf(format string, args ...any)
-}
-
 type DaemonOpts struct {
 	Interval             time.Duration
 	MaxPerHour           int
@@ -32,7 +28,7 @@ type DaemonOpts struct {
 	DryRun               bool
 	ProjectOwner         string
 	ProjectNumber        int
-	Logger               Logger
+	Logger               *slog.Logger
 }
 
 type failureEntry struct {
@@ -73,7 +69,7 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 
 	logf := func(format string, args ...any) { slog.Info(fmt.Sprintf(format, args...)) }
 	if opts.Logger != nil {
-		logf = opts.Logger.Printf
+		logf = func(format string, args ...any) { opts.Logger.Info(fmt.Sprintf(format, args...)) }
 	}
 	logf("project daemon started (interval: %s)", interval)
 
@@ -117,14 +113,14 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts) error {
 	checks := guardrails.SafetyChecks{}
 	if err := checks.ValidateItem(item); err != nil {
-		return err
+		return fmt.Errorf("validate queue item %s#%d: %w", item.Repo, item.Number, err)
 	}
 	if opts.DryRun {
+		l := slog.Default()
 		if opts.Logger != nil {
-			opts.Logger.Printf("dry run: would process %s#%d", item.Repo, item.Number)
-		} else {
-			slog.Info("dry run: would process", "repo", item.Repo, "issue", item.Number)
+			l = opts.Logger
 		}
+		l.Info("dry run: would process", "repo", item.Repo, "issue", item.Number)
 		return nil
 	}
 
@@ -135,7 +131,7 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 		DryRun:      opts.DryRun,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("start agent for %s#%d: %w", item.Repo, item.Number, err)
 	}
 
 	if opts.Codespace {
@@ -146,7 +142,7 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 			IdleTimeout: defaultIfEmpty(opts.CodespaceIdleTimeout, "30m"),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("create codespace for %s#%d: %w", item.Repo, item.Number, err)
 		}
 		defer func() {
 			// Clean up codespace after work is done
@@ -155,12 +151,12 @@ func processItem(ctx context.Context, item guardrails.QueueItem, opts DaemonOpts
 			}
 		}()
 		if err := WaitForReady(ctx, name, 20*time.Minute); err != nil {
-			return err
+			return fmt.Errorf("wait for codespace %s: %w", name, err)
 		}
 
 		cfg, err := config.Load("helm.toml")
 		if err != nil {
-			return err
+			return fmt.Errorf("load config: %w", err)
 		}
 		notifier := notifications.New(cfg, item.Repo, item.Number)
 		if notifier != nil {
@@ -244,23 +240,20 @@ query($owner: String!, $number: Int!) {
 
 	out, err := github.RunWith(ctx, "api", "graphql", "-f", "query="+query, "-F", "owner="+owner, "-F", fmt.Sprintf("number=%d", projectNumber))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetch queue items from project %d: %w", projectNumber, err)
 	}
 
-	var resp projectItemsResponse
+	var resp github.ProjectItemsResponse
 	if err := json.Unmarshal(out, &resp); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse queue items response: %w", err)
 	}
-	project := resp.Organization
-	if project == nil || project.Project == nil {
-		project = resp.User
-	}
-	if project == nil || project.Project == nil {
+	project := resp.ResolveProject()
+	if project == nil {
 		return nil, fmt.Errorf("project not found")
 	}
 
 	items := []guardrails.QueueItem{}
-	for _, node := range project.Project.Items.Nodes {
+	for _, node := range project.Items.Nodes {
 		if node.Content.Number == 0 {
 			continue
 		}
@@ -284,65 +277,6 @@ query($owner: String!, $number: Int!) {
 		})
 	}
 	return items, nil
-}
-
-type projectItemsResponse struct {
-	Organization *struct {
-		Project *projectItems `json:"projectV2"`
-	} `json:"organization"`
-	User *struct {
-		Project *projectItems `json:"projectV2"`
-	} `json:"user"`
-}
-
-type projectItems struct {
-	Items struct {
-		Nodes []projectItemNode `json:"nodes"`
-	} `json:"items"`
-}
-
-type projectItemNode struct {
-	ID      string `json:"id"`
-	Content struct {
-		Number     int    `json:"number"`
-		Title      string `json:"title"`
-		Body       string `json:"body"`
-		URL        string `json:"url"`
-		ID         string `json:"id"`
-		Repository struct {
-			NameWithOwner string `json:"nameWithOwner"`
-		} `json:"repository"`
-		Labels struct {
-			Nodes []struct {
-				Name string `json:"name"`
-			} `json:"nodes"`
-		} `json:"labels"`
-	} `json:"content"`
-	FieldValues struct {
-		Nodes []struct {
-			Name  string `json:"name"`
-			Field struct {
-				Name string `json:"name"`
-			} `json:"field"`
-		} `json:"nodes"`
-	} `json:"fieldValues"`
-}
-
-func (n projectItemNode) Status() string {
-	for _, field := range n.FieldValues.Nodes {
-		if field.Field.Name == "Status" {
-			return field.Name
-		}
-	}
-	return ""
-}
-
-func (n projectItemNode) LabelNames() []string {
-	labels := make([]string, 0, len(n.Content.Labels.Nodes))
-	for _, node := range n.Content.Labels.Nodes {
-		labels = append(labels, node.Name)
-	}
-	return labels
 }
 
 func containsLabel(labels []string, target string) bool {

@@ -17,6 +17,82 @@ type projectField struct {
 	} `json:"options"`
 }
 
+// ProjectItemsResponse wraps the GraphQL response for project item queries
+// that try both organization and user scopes.
+type ProjectItemsResponse struct {
+	Organization *struct {
+		Project *ProjectItems `json:"projectV2"`
+	} `json:"organization"`
+	User *struct {
+		Project *ProjectItems `json:"projectV2"`
+	} `json:"user"`
+}
+
+// ResolveProject returns the non-nil project from either Organization or User scope.
+func (r *ProjectItemsResponse) ResolveProject() *ProjectItems {
+	if r.Organization != nil && r.Organization.Project != nil {
+		return r.Organization.Project
+	}
+	if r.User != nil && r.User.Project != nil {
+		return r.User.Project
+	}
+	return nil
+}
+
+// ProjectItems holds the items list from a project query.
+type ProjectItems struct {
+	Items struct {
+		Nodes []ProjectItemNode `json:"nodes"`
+	} `json:"items"`
+}
+
+// ProjectItemNode represents a single item on a project board.
+type ProjectItemNode struct {
+	ID      string `json:"id"`
+	Content struct {
+		Number     int    `json:"number"`
+		Title      string `json:"title"`
+		Body       string `json:"body"`
+		URL        string `json:"url"`
+		ID         string `json:"id"`
+		Repository struct {
+			NameWithOwner string `json:"nameWithOwner"`
+		} `json:"repository"`
+		Labels struct {
+			Nodes []struct {
+				Name string `json:"name"`
+			} `json:"nodes"`
+		} `json:"labels"`
+	} `json:"content"`
+	FieldValues struct {
+		Nodes []struct {
+			Name  string `json:"name"`
+			Field struct {
+				Name string `json:"name"`
+			} `json:"field"`
+		} `json:"nodes"`
+	} `json:"fieldValues"`
+}
+
+// Status returns the value of the "Status" field for this item.
+func (n ProjectItemNode) Status() string {
+	for _, field := range n.FieldValues.Nodes {
+		if field.Field.Name == "Status" {
+			return field.Name
+		}
+	}
+	return ""
+}
+
+// LabelNames returns the names of all labels on this item.
+func (n ProjectItemNode) LabelNames() []string {
+	labels := make([]string, 0, len(n.Content.Labels.Nodes))
+	for _, node := range n.Content.Labels.Nodes {
+		labels = append(labels, node.Name)
+	}
+	return labels
+}
+
 type projectV2 struct {
 	ID     string `json:"id"`
 	Fields struct {
@@ -130,7 +206,7 @@ query($owner: String!, $number: Int!, $after: String) {
 		pagesScanned++
 		proj, err := fetchPage(cursor)
 		if err != nil {
-			return err
+			return fmt.Errorf("fetch project page: %w", err)
 		}
 
 		if projectID == "" {

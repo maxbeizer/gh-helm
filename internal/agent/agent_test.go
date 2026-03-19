@@ -257,12 +257,12 @@ func TestReadStatus(t *testing.T) {
 func TestProjectItemNodeStatus(t *testing.T) {
 	tests := []struct {
 		name string
-		node projectItemNode
+		node github.ProjectItemNode
 		want string
 	}{
 		{
 			"has status field",
-			projectItemNode{
+			github.ProjectItemNode{
 				FieldValues: struct {
 					Nodes []struct {
 						Name  string `json:"name"`
@@ -287,7 +287,7 @@ func TestProjectItemNodeStatus(t *testing.T) {
 		},
 		{
 			"no status field",
-			projectItemNode{},
+			github.ProjectItemNode{},
 			"",
 		},
 	}
@@ -303,7 +303,7 @@ func TestProjectItemNodeStatus(t *testing.T) {
 }
 
 func TestProjectItemNodeLabelNames(t *testing.T) {
-	node := projectItemNode{}
+	node := github.ProjectItemNode{}
 	node.Content.Labels.Nodes = []struct {
 		Name string `json:"name"`
 	}{

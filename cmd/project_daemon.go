@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/maxbeizer/gh-helm/internal/agent"
@@ -58,24 +59,12 @@ var projectDaemonCmd = &cobra.Command{
 		jqExpr, _ := cmd.Flags().GetString("jq")
 		if jsonFlag || jqExpr != "" {
 			out := output.New(cmd)
-			opts.Logger = jsonLogger{out: out}
+			opts.Logger = slog.New(newOutputHandler(out))
 		} else {
 			fmt.Fprintf(cmd.OutOrStdout(), "project daemon started (interval: %s)\n", interval)
 		}
 		return agent.RunDaemon(cmd.Context(), cfg.Project, opts)
 	},
-}
-
-type jsonLogger struct {
-	out *output.Output
-}
-
-func (j jsonLogger) Printf(format string, args ...any) {
-	payload := map[string]any{
-		"time":    time.Now().Format(time.RFC3339),
-		"message": fmt.Sprintf(format, args...),
-	}
-	_ = j.out.Print(payload)
 }
 
 func init() {

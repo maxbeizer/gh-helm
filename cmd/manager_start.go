@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"time"
+	"log/slog"
 
 	"github.com/maxbeizer/gh-helm/internal/manager"
 	"github.com/maxbeizer/gh-helm/internal/output"
@@ -17,24 +17,12 @@ var managerStartCmd = &cobra.Command{
 		jqExpr, _ := cmd.Flags().GetString("jq")
 		if jsonFlag || jqExpr != "" {
 			out := output.New(cmd)
-			logger := managerJSONLogger{out: out}
+			logger := slog.New(newOutputHandler(out))
 			return manager.RunManagerDaemon(cmd.Context(), "helm-manager.toml", logger)
 		}
 		fmt.Fprintln(cmd.OutOrStdout(), "manager daemon started")
 		return manager.RunManagerDaemon(cmd.Context(), "helm-manager.toml", nil)
 	},
-}
-
-type managerJSONLogger struct {
-	out *output.Output
-}
-
-func (m managerJSONLogger) Printf(format string, args ...any) {
-	payload := map[string]any{
-		"time":    time.Now().Format(time.RFC3339),
-		"message": fmt.Sprintf(format, args...),
-	}
-	_ = m.out.Print(payload)
 }
 
 func init() {
