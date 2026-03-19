@@ -31,13 +31,31 @@ func statusPath() string {
 	return filepath.Join(".helm", "state.json")
 }
 
+const maxStatusHistory = 50
+
 func writeStatus(session string, issue github.Issue, pr PullRequest) error {
-	s := State{
-		Session:      session,
-		LastActivity: time.Now(),
-		IssuesWorked: []IssueInfo{{Number: issue.Number, Title: issue.Title}},
-		PullsCreated: []PullInfo{{Number: pr.Number, URL: pr.URL}},
+	s, err := ReadStatus()
+	if err != nil {
+		// Start fresh if we can't read existing state
+		s = State{
+			IssuesWorked: []IssueInfo{},
+			PullsCreated: []PullInfo{},
+		}
 	}
+
+	s.Session = session
+	s.LastActivity = time.Now()
+	s.IssuesWorked = append(s.IssuesWorked, IssueInfo{Number: issue.Number, Title: issue.Title})
+	s.PullsCreated = append(s.PullsCreated, PullInfo{Number: pr.Number, URL: pr.URL})
+
+	// Cap history to prevent unbounded growth
+	if len(s.IssuesWorked) > maxStatusHistory {
+		s.IssuesWorked = s.IssuesWorked[len(s.IssuesWorked)-maxStatusHistory:]
+	}
+	if len(s.PullsCreated) > maxStatusHistory {
+		s.PullsCreated = s.PullsCreated[len(s.PullsCreated)-maxStatusHistory:]
+	}
+
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err

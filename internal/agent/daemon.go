@@ -68,7 +68,8 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 	defer ticker.Stop()
 
 	limiter := guardrails.NewRateLimiter(maxPerHour)
-	seen := make(map[string]bool)
+	seen := make(map[string]time.Time)
+	const seenTTL = 1 * time.Hour
 
 	logf := func(format string, args ...any) { slog.Info(fmt.Sprintf(format, args...)) }
 	if opts.Logger != nil {
@@ -81,16 +82,27 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
+			// Prune expired entries so failed items can be retried
+			now := time.Now()
+			for id, t := range seen {
+				if now.Sub(t) > seenTTL {
+					delete(seen, id)
+				}
+			}
+
 			items, err := fetchQueueItems(ctx, owner, project, status, opts.Label)
 			if err != nil {
 				logf("poll error: %v", err)
 				continue
 			}
 			for _, item := range items {
-				if seen[item.ID] || !limiter.Allow() {
+				if _, ok := seen[item.ID]; ok {
 					continue
 				}
-				seen[item.ID] = true
+				if !limiter.Allow() {
+					continue
+				}
+				seen[item.ID] = now
 				if err := processItem(ctx, item, opts); err != nil {
 					commentFailure(ctx, item, err)
 					moveToStatus(ctx, owner, project, item, "Needs Attention")
