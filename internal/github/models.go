@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -141,10 +140,9 @@ func truncate(s string, n int) string {
 }
 
 func authToken(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "gh", "auth", "token")
-	out, err := cmd.Output()
+	out, err := runGh(ctx, "auth", "token")
 	if err != nil {
 		return "", fmt.Errorf("gh auth token: %w", err)
 	}
-	return strings.TrimSpace(string(out)), nil
+	return string(bytes.TrimSpace(out)), nil
 }

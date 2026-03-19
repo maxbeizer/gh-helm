@@ -11,13 +11,16 @@ import (
 	"testing"
 
 	"github.com/maxbeizer/gh-helm/internal/config"
+	"github.com/maxbeizer/gh-helm/internal/github"
 )
 
 func withMockRun(t *testing.T, fn func(ctx context.Context, args ...string) error) {
 	t.Helper()
-	orig := RunFunc
-	RunFunc = fn
-	t.Cleanup(func() { RunFunc = orig })
+	orig := github.RunGhFunc
+	github.RunGhFunc = func(ctx context.Context, args ...string) ([]byte, error) {
+		return nil, fn(ctx, args...)
+	}
+	t.Cleanup(func() { github.RunGhFunc = orig })
 }
 
 // --- Factory tests ---

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/maxbeizer/gh-helm/internal/github"
 )
 
 type CodespaceOpts struct {
@@ -36,13 +38,13 @@ func CreateCodespace(ctx context.Context, opts CodespaceOpts) (string, string, e
 	}
 	args = append(args, "--json", "name,webUrl")
 
-	out, err := runCmdOutput(ctx, "gh", args...)
+	out, err := github.RunWith(ctx, args...)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("create codespace for %s: %w", opts.Repo, err)
 	}
 	var payload codespaceInfo
 	if err := json.Unmarshal(out, &payload); err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("parse codespace response: %w", err)
 	}
 	return payload.Name, payload.WebURL, nil
 }
@@ -58,7 +60,7 @@ func WaitForReady(ctx context.Context, name string, timeout time.Duration) error
 		}
 		state, err := codespaceState(ctx, name)
 		if err != nil {
-			return err
+			return fmt.Errorf("check codespace %s state: %w", name, err)
 		}
 		if state == "Available" {
 			return nil
@@ -75,18 +77,21 @@ func DeleteCodespace(ctx context.Context, name string) error {
 	if name == "" {
 		return fmt.Errorf("codespace name is required")
 	}
-	_, err := runCmdOutput(ctx, "gh", "codespace", "delete", "--codespace", name, "--force")
-	return err
+	_, err := github.RunWith(ctx, "codespace", "delete", "--codespace", name, "--force")
+	if err != nil {
+		return fmt.Errorf("delete codespace %s: %w", name, err)
+	}
+	return nil
 }
 
 func codespaceState(ctx context.Context, name string) (string, error) {
-	out, err := runCmdOutput(ctx, "gh", "codespace", "list", "--json", "name,state")
+	out, err := github.RunWith(ctx, "codespace", "list", "--json", "name,state")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("list codespaces: %w", err)
 	}
 	var payload []codespaceInfo
 	if err := json.Unmarshal(out, &payload); err != nil {
-		return "", err
+		return "", fmt.Errorf("parse codespace list: %w", err)
 	}
 	for _, item := range payload {
 		if item.Name == name {

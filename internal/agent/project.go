@@ -1,8 +1,8 @@
 package agent
 
 import (
+	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -203,10 +203,10 @@ func applyChanges(files []github.FileChange) error {
 			continue
 		}
 		if err := os.MkdirAll(filepath.Dir(file.Path), 0o755); err != nil {
-			return err
+			return fmt.Errorf("create directory for %s: %w", file.Path, err)
 		}
 		if err := os.WriteFile(file.Path, []byte(file.Content), 0o644); err != nil {
-			return err
+			return fmt.Errorf("write file %s: %w", file.Path, err)
 		}
 	}
 	return nil
@@ -218,22 +218,13 @@ func createDraftPR(ctx context.Context, repo, title, body string) (int, string, 
 		args = append(args, "--repo", repo)
 	}
 	slog.Debug("creating draft PR", "title", title, "repo", repo)
-	out, err := runCmdOutput(ctx, "gh", args...)
+	out, err := github.RunWith(ctx, args...)
 	if err != nil {
-		// Capture stderr for a better error message.
-		var exitErr *exec.ExitError
-		stderr := ""
-		if ok := errors.As(err, &exitErr); ok {
-			stderr = strings.TrimSpace(string(exitErr.Stderr))
-		}
-		if stderr != "" {
-			return 0, "", fmt.Errorf("create draft PR: %s", stderr)
-		}
 		return 0, "", fmt.Errorf("create draft PR: %w", err)
 	}
 
 	// gh pr create outputs the PR URL to stdout (no --json support).
-	prURL := strings.TrimSpace(string(out))
+	prURL := string(bytes.TrimSpace(out))
 	slog.Debug("draft PR created", "url", prURL)
 
 	// Extract PR number from URL: .../pull/123
@@ -250,16 +241,19 @@ func createDraftPR(ctx context.Context, repo, title, body string) (int, string, 
 	return prNumber, prURL, nil
 }
 
-func runCmd(ctx context.Context, name string, args ...string) error {
-	cmd := exec.CommandContext(ctx, name, args...)
+// RunGitFunc is the function used to execute git CLI commands.
+// Override in tests to provide mock responses.
+var RunGitFunc = defaultRunGit
+
+func defaultRunGit(ctx context.Context, args ...string) error {
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func runCmdOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, name, args...)
-	return cmd.Output()
+func runCmd(ctx context.Context, name string, args ...string) error {
+	return RunGitFunc(ctx, args...)
 }
 
 func slugify(input string) string {

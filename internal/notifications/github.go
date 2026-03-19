@@ -3,15 +3,9 @@ package notifications
 import (
 	"context"
 	"fmt"
-	"os/exec"
+
+	"github.com/maxbeizer/gh-helm/internal/github"
 )
-
-// RunFunc executes a gh CLI command. Override in tests to mock.
-var RunFunc = defaultRun
-
-func defaultRun(ctx context.Context, args ...string) error {
-	return exec.CommandContext(ctx, "gh", args...).Run()
-}
 
 type GitHubNotifier struct {
 	Repo        string
@@ -24,5 +18,6 @@ func (g *GitHubNotifier) Notify(ctx context.Context, msg Message) error {
 	if g.Repo != "" {
 		args = append(args, "--repo", g.Repo)
 	}
-	return RunFunc(ctx, args...)
+	_, err := github.RunWith(ctx, args...)
+	return err
 }
