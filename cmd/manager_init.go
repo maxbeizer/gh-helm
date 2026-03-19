@@ -17,19 +17,19 @@ var managerInitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Create a helm-manager.toml in the current directory",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		hubber, _ := cmd.Flags().GetString("hubber")
+		username, _ := cmd.Flags().GetString("user")
 		reader := bufio.NewReader(os.Stdin)
 
-		if hubber == "" {
+		if username == "" {
 			if user, err := github.CurrentUser(cmd.Context()); err == nil {
-				hubber = user
+				username = user
 			}
 		}
-		fmt.Printf("Hubber (default %s): ", hubber)
+		fmt.Printf("Username (default %s): ", username)
 		text, _ := reader.ReadString('\n')
 		text = strings.TrimSpace(text)
 		if text != "" {
-			hubber = text
+			username = text
 		}
 
 		projects := []config.ManagerProject{}
@@ -98,7 +98,7 @@ var managerInitCmd = &cobra.Command{
 
 		cfg := config.ManagerConfig{
 			Version:  config.CurrentManagerConfigVersion,
-			Manager:  config.ManagerSettings{Hubber: hubber},
+			Manager:  config.ManagerSettings{User: username},
 			Projects: projects,
 			Team:     team,
 			Pillars:  pillars,
@@ -130,6 +130,6 @@ func splitCSV(input string) []string {
 }
 
 func init() {
-	managerInitCmd.Flags().String("hubber", "", "Manager username")
+	managerInitCmd.Flags().String("user", "", "Manager username")
 	managerCmd.AddCommand(managerInitCmd)
 }

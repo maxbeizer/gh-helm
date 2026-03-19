@@ -12,8 +12,8 @@ import (
 
 var projectSuggestCmd = &cobra.Command{
 	Use:   "suggest",
-	Short: "Suggest issues based on hubber profile",
-	Long:  "Rank available issues by match with the hubber's skills, growth areas, and interests from their profile.",
+	Short: "Suggest issues based on developer profile",
+	Long:  "Rank available issues by match with the developer's skills, growth areas, and interests from their profile.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.Load("helm.toml")
 		if err != nil {
@@ -22,10 +22,10 @@ var projectSuggestCmd = &cobra.Command{
 
 		profileRepo, _ := cmd.Flags().GetString("profile-repo")
 		if profileRepo == "" {
-			return fmt.Errorf("--profile-repo is required (e.g., owner/hubber-1-1)")
+			return fmt.Errorf("--profile-repo is required (e.g., owner/dev-1-1)")
 		}
 
-		hubberProfile, err := profile.Load(cmd.Context(), profileRepo)
+		devProfile, err := profile.Load(cmd.Context(), profileRepo)
 		if err != nil {
 			return fmt.Errorf("load profile: %w", err)
 		}
@@ -59,7 +59,7 @@ var projectSuggestCmd = &cobra.Command{
 			})
 		}
 
-		suggestions := profile.SuggestWork(hubberProfile, issues)
+		suggestions := profile.SuggestWork(devProfile, issues)
 
 		out := output.New(cmd)
 		return out.Print(suggestions)
@@ -67,6 +67,6 @@ var projectSuggestCmd = &cobra.Command{
 }
 
 func init() {
-	projectSuggestCmd.Flags().String("profile-repo", "", "1-1 repo containing hubber-profile.toml")
+	projectSuggestCmd.Flags().String("profile-repo", "", "1-1 repo containing developer-profile.toml")
 	projectCmd.AddCommand(projectSuggestCmd)
 }

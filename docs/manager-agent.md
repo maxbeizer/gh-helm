@@ -12,7 +12,7 @@ The manager agent runs separately, configured across all your projects and repor
 version = 1
 
 [manager]
-hubber = "maxbeizer"
+user = "octocat"
 
 [[projects]]
 owner = "myorg"

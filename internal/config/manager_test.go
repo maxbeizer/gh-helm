@@ -19,7 +19,7 @@ func TestLoadManager(t *testing.T) {
 			content: `version = 1
 
 [manager]
-hubber = "lead"
+user = "lead"
 
 [[projects]]
 owner = "orgA"
@@ -68,8 +68,8 @@ observe = "30 14 * * *"
 				if cfg.Version != 1 {
 					t.Errorf("Version = %d, want 1", cfg.Version)
 				}
-				if cfg.Manager.Hubber != "lead" {
-					t.Errorf("Manager.Hubber = %q, want %q", cfg.Manager.Hubber, "lead")
+				if cfg.Manager.User != "lead" {
+					t.Errorf("Manager.User = %q, want %q", cfg.Manager.User, "lead")
 				}
 				if len(cfg.Projects) != 2 {
 					t.Fatalf("len(Projects) = %d, want 2", len(cfg.Projects))
@@ -100,12 +100,12 @@ observe = "30 14 * * *"
 		},
 		{
 			name:    "missing version",
-			content: "[manager]\nhubber = \"x\"\n",
+			content: "[manager]\nuser = \"x\"\n",
 			wantErr: "missing 'version' field",
 		},
 		{
 			name:    "wrong version with migration message",
-			content: "version = 99\n[manager]\nhubber = \"x\"\n",
+			content: "version = 99\n[manager]\nuser = \"x\"\n",
 			wantErr: "gh helm upgrade",
 		},
 	}
@@ -151,7 +151,7 @@ func TestWriteManagerLoadRoundtrip(t *testing.T) {
 
 	original := ManagerConfig{
 		Version: CurrentManagerConfigVersion,
-		Manager: ManagerSettings{Hubber: "roundtrip-lead"},
+		Manager: ManagerSettings{User: "roundtrip-lead"},
 		Projects: []ManagerProject{
 			{Owner: "org1", Board: 100, Name: "P1"},
 		},
@@ -186,8 +186,8 @@ func TestWriteManagerLoadRoundtrip(t *testing.T) {
 	if loaded.Version != original.Version {
 		t.Errorf("Version = %d, want %d", loaded.Version, original.Version)
 	}
-	if loaded.Manager.Hubber != original.Manager.Hubber {
-		t.Errorf("Manager.Hubber = %q, want %q", loaded.Manager.Hubber, original.Manager.Hubber)
+	if loaded.Manager.User != original.Manager.User {
+		t.Errorf("Manager.User = %q, want %q", loaded.Manager.User, original.Manager.User)
 	}
 	if len(loaded.Projects) != 1 || loaded.Projects[0].Owner != "org1" {
 		t.Errorf("Projects = %+v", loaded.Projects)

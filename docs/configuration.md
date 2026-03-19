@@ -14,7 +14,7 @@ board = 25                              # GitHub Projects v2 number
 owner = "myorg"                         # Project/org owner
 
 [agent]
-hubber = "maxbeizer"                    # Developer running the agent
+user = "octocat"                    # Developer running the agent
 model = "gpt-4o"                        # AI model (via GitHub Models API)
 max-per-hour = 3                        # Max issues claimed per rolling hour
 
@@ -42,7 +42,7 @@ idle-timeout = "30m"                    # Auto-stop after idle
 | — | `version` | yes | — | Config schema version (currently `1`) |
 | `project` | `board` | yes | — | GitHub Projects v2 board number |
 | `project` | `owner` | yes | — | GitHub org or user that owns the project |
-| `agent` | `hubber` | yes | — | GitHub handle of the developer running the agent |
+| `agent` | `user` | yes | — | GitHub handle of the developer running the agent |
 | `agent` | `model` | no | `gpt-4o` | AI model via GitHub Models API |
 | `agent` | `max-per-hour` | no | `3` | Rate limit: max issues claimed per rolling hour |
 | `notifications` | `channel` | no | `slack` | Notification channel: `slack`, `teams`, `discord`, `github` |
@@ -63,7 +63,7 @@ Lives wherever you run the manager agent. Created by `gh helm manager init`.
 version = 1
 
 [manager]
-hubber = "maxbeizer"
+user = "octocat"
 
 [[projects]]
 owner = "myorg"
@@ -110,7 +110,7 @@ observe = "0 2 * * 5"        # Weekly observations Friday night
 | Section | Field | Required | Default | Description |
 |---------|-------|----------|---------|-------------|
 | — | `version` | yes | — | Config schema version (currently `1`) |
-| `manager` | `hubber` | yes | — | GitHub handle of the manager |
+| `manager` | `user` | yes | — | GitHub handle of the manager |
 | `projects` | `owner` | yes | — | Org/user owning the project |
 | `projects` | `board` | yes | — | Projects v2 board number |
 | `projects` | `name` | yes | — | Human-readable project name |

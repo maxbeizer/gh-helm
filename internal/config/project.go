@@ -25,7 +25,7 @@ Owner string `toml:"owner"`
 }
 
 type AgentConfig struct {
-Hubber     string `toml:"hubber"`
+User       string `toml:"user"`
 Model      string `toml:"model"`
 MaxPerHour int    `toml:"max-per-hour"`
 }

@@ -5,7 +5,7 @@ import (
 )
 
 func TestSuggestWork(t *testing.T) {
-	p := HubberProfile{
+	p := DeveloperProfile{
 		Skills: SkillSet{
 			Strong:     []string{"go", "api-design"},
 			Growing:    []string{"security", "observability"},
@@ -45,7 +45,7 @@ func TestSuggestWork(t *testing.T) {
 }
 
 func TestSuggestWorkEmptyProfile(t *testing.T) {
-	p := HubberProfile{}
+	p := DeveloperProfile{}
 	issues := []IssueSummary{
 		{Number: 1, Title: "Something", Body: "Body"},
 	}
@@ -56,7 +56,7 @@ func TestSuggestWorkEmptyProfile(t *testing.T) {
 }
 
 func TestScoreIssueGrowingSkillsRankHigher(t *testing.T) {
-	p := HubberProfile{
+	p := DeveloperProfile{
 		Skills: SkillSet{
 			Strong:  []string{"go"},
 			Growing: []string{"go"},

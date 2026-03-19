@@ -44,7 +44,7 @@ All planned features implemented. Zero open issues. Ready for real-world testing
 - [x] Structured logging with slog + --verbose flag
 - [x] Atomic state file writes (temp file + rename)
 - [x] Integration tests with mocked gh CLI (7 tests)
-- [x] Hubber profile-based work suggestions (`gh helm project suggest`)
+- [x] Developer profile-based work suggestions (`gh helm project suggest`)
 - [x] Codespace creation on draft PR (`--codespace` flag + config)
 - [x] Manager stats command with bus factor analysis
 

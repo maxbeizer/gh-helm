@@ -20,7 +20,7 @@ type ManagerConfig struct {
 }
 
 type ManagerSettings struct {
-	Hubber string `toml:"hubber"`
+	User string `toml:"user"`
 }
 
 type ManagerProject struct {

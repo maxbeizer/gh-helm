@@ -9,7 +9,7 @@ import (
 	"github.com/maxbeizer/gh-helm/internal/github"
 )
 
-type HubberProfile struct {
+type DeveloperProfile struct {
 	Skills      SkillSet    `toml:"skills"`
 	GrowthAreas []string   `toml:"growth-areas"`
 	Preferences Preferences `toml:"preferences"`
@@ -40,27 +40,27 @@ type IssueSummary struct {
 	Body   string
 }
 
-// Load fetches a hubber profile from their 1-1 repo.
-// Looks for hubber-profile.toml in the repo root.
-func Load(ctx context.Context, repo string) (HubberProfile, error) {
+// Load fetches a developer profile from their 1-1 repo.
+// Looks for developer-profile.toml in the repo root.
+func Load(ctx context.Context, repo string) (DeveloperProfile, error) {
 	if repo == "" {
-		return HubberProfile{}, fmt.Errorf("profile repo is required")
+		return DeveloperProfile{}, fmt.Errorf("profile repo is required")
 	}
-	out, err := github.RunWith(ctx, "api", fmt.Sprintf("repos/%s/contents/hubber-profile.toml", repo),
+	out, err := github.RunWith(ctx, "api", fmt.Sprintf("repos/%s/contents/developer-profile.toml", repo),
 		"--jq", ".content", "-H", "Accept: application/vnd.github.raw+json")
 	if err != nil {
-		return HubberProfile{}, fmt.Errorf("fetch profile from %s: %w", repo, err)
+		return DeveloperProfile{}, fmt.Errorf("fetch profile from %s: %w", repo, err)
 	}
-	var profile HubberProfile
+	var profile DeveloperProfile
 	if _, err := toml.Decode(string(out), &profile); err != nil {
-		return HubberProfile{}, fmt.Errorf("parse profile: %w", err)
+		return DeveloperProfile{}, fmt.Errorf("parse profile: %w", err)
 	}
 	return profile, nil
 }
 
-// SuggestWork scores and ranks issues based on the hubber's profile.
+// SuggestWork scores and ranks issues based on the developer's profile.
 // Returns suggestions sorted by score (highest first).
-func SuggestWork(profile HubberProfile, issues []IssueSummary) []WorkSuggestion {
+func SuggestWork(profile DeveloperProfile, issues []IssueSummary) []WorkSuggestion {
 	suggestions := make([]WorkSuggestion, 0, len(issues))
 	for _, issue := range issues {
 		suggestion := scoreIssue(profile, issue)
@@ -79,7 +79,7 @@ func SuggestWork(profile HubberProfile, issues []IssueSummary) []WorkSuggestion 
 	return suggestions
 }
 
-func scoreIssue(profile HubberProfile, issue IssueSummary) WorkSuggestion {
+func scoreIssue(profile DeveloperProfile, issue IssueSummary) WorkSuggestion {
 	suggestion := WorkSuggestion{
 		IssueNumber: issue.Number,
 		IssueTitle:  issue.Title,

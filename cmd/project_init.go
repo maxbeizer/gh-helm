@@ -44,7 +44,7 @@ var projectInitCmd = &cobra.Command{
 		board, _ := cmd.Flags().GetInt("project")
 		owner, _ := cmd.Flags().GetString("owner")
 		boardURL, _ := cmd.Flags().GetString("board-url")
-		hubber, _ := cmd.Flags().GetString("hubber")
+		username, _ := cmd.Flags().GetString("user")
 		model, _ := cmd.Flags().GetString("model")
 		maxPerHour, _ := cmd.Flags().GetInt("max-per-hour")
 		channel, _ := cmd.Flags().GetString("channel")
@@ -64,7 +64,7 @@ var projectInitCmd = &cobra.Command{
 			board = parsedBoard
 		}
 
-		noFlags := board == 0 && owner == "" && hubber == "" && opsChannel == "" && sotPath == ""
+		noFlags := board == 0 && owner == "" && username == "" && opsChannel == "" && sotPath == ""
 
 		if noFlags {
 			reader := bufio.NewReader(os.Stdin)
@@ -94,21 +94,21 @@ var projectInitCmd = &cobra.Command{
 				owner = strings.TrimSpace(ownerText)
 			}
 
-			defaultHubber := ""
-			if hubber == "" {
+			defaultUser := ""
+			if username == "" {
 				if user, err := github.CurrentUser(cmd.Context()); err == nil {
-					defaultHubber = user
+					defaultUser = user
 				}
 			}
-			if defaultHubber != "" {
-				fmt.Printf("Hubber (default %s): ", defaultHubber)
+			if defaultUser != "" {
+				fmt.Printf("Username (default %s): ", defaultUser)
 			} else {
-				fmt.Print("Hubber: ")
+				fmt.Print("Username: ")
 			}
-			hubberText, _ := reader.ReadString('\n')
-			hubber = strings.TrimSpace(hubberText)
-			if hubber == "" {
-				hubber = defaultHubber
+			userText, _ := reader.ReadString('\n')
+			username = strings.TrimSpace(userText)
+			if username == "" {
+				username = defaultUser
 			}
 
 			fmt.Print("Ops channel: ")
@@ -124,12 +124,12 @@ var projectInitCmd = &cobra.Command{
 			sotPath = "docs/SOURCE_OF_TRUTH.md"
 		}
 
-		if hubber == "" {
-			defaultHubber := ""
+		if username == "" {
+			defaultUser := ""
 			if user, err := github.CurrentUser(cmd.Context()); err == nil {
-				defaultHubber = user
+				defaultUser = user
 			}
-			hubber = defaultHubber
+			username = defaultUser
 		}
 
 		if model == "" {
@@ -146,7 +146,7 @@ var projectInitCmd = &cobra.Command{
 				Owner: owner,
 			},
 			Agent: config.AgentConfig{
-				Hubber:     hubber,
+				User:       username,
 				Model:      model,
 				MaxPerHour: maxPerHour,
 			},
@@ -174,8 +174,8 @@ var projectInitCmd = &cobra.Command{
 func init() {
 	projectInitCmd.Flags().Int("project", 0, "Project board number")
 	projectInitCmd.Flags().String("owner", "", "Project owner")
-	projectInitCmd.Flags().String("board-url", "", "Project board URL (e.g. https://github.com/users/maxbeizer/projects/24)")
-	projectInitCmd.Flags().String("hubber", "", "Developer username")
+	projectInitCmd.Flags().String("board-url", "", "Project board URL (e.g. https://github.com/users/octocat/projects/1)")
+	projectInitCmd.Flags().String("user", "", "Developer username")
 	projectInitCmd.Flags().String("model", "", "AI model (default gpt-4o)")
 	projectInitCmd.Flags().Int("max-per-hour", 0, "Rate limit for agent actions")
 	projectInitCmd.Flags().String("channel", "", "Notification channel (default slack)")

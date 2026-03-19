@@ -24,7 +24,7 @@ board = 25
 owner = "myorg"
 
 [agent]
-hubber = "testhubber"
+user = "testhubber"
 model = "gpt-4"
 max-per-hour = 10
 
@@ -48,8 +48,8 @@ labels = ["bug", "feature"]
 				if cfg.Project.Owner != "myorg" {
 					t.Errorf("Owner = %q, want %q", cfg.Project.Owner, "myorg")
 				}
-				if cfg.Agent.Hubber != "testhubber" {
-					t.Errorf("Hubber = %q, want %q", cfg.Agent.Hubber, "testhubber")
+				if cfg.Agent.User != "testhubber" {
+					t.Errorf("User = %q, want %q", cfg.Agent.User, "testhubber")
 				}
 				if cfg.Agent.Model != "gpt-4" {
 					t.Errorf("Model = %q, want %q", cfg.Agent.Model, "gpt-4")
@@ -165,7 +165,7 @@ func TestWriteLoadRoundtrip(t *testing.T) {
 			Owner: "roundtrip-org",
 		},
 		Agent: AgentConfig{
-			Hubber:     "alice",
+			User:       "alice",
 			Model:      "gpt-4",
 			MaxPerHour: 5,
 		},
@@ -199,8 +199,8 @@ func TestWriteLoadRoundtrip(t *testing.T) {
 	if loaded.Project.Owner != original.Project.Owner {
 		t.Errorf("Owner = %q, want %q", loaded.Project.Owner, original.Project.Owner)
 	}
-	if loaded.Agent.Hubber != original.Agent.Hubber {
-		t.Errorf("Hubber = %q, want %q", loaded.Agent.Hubber, original.Agent.Hubber)
+	if loaded.Agent.User != original.Agent.User {
+		t.Errorf("User = %q, want %q", loaded.Agent.User, original.Agent.User)
 	}
 	if loaded.Agent.Model != original.Agent.Model {
 		t.Errorf("Model = %q, want %q", loaded.Agent.Model, original.Agent.Model)

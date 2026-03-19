@@ -1,4 +1,4 @@
-# hubber-profile.toml — place in your 1-1 repo root
+# developer-profile.toml — place in your 1-1 repo root
 # The project agent reads this to suggest work that matches your skills and growth.
 
 [skills]

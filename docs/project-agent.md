@@ -14,7 +14,7 @@ board = 25                              # GitHub Projects v2 number
 owner = "myorg"                         # Project/org owner
 
 [agent]
-hubber = "maxbeizer"                    # Developer running the agent
+user = "octocat"                    # Developer running the agent
 model = "gpt-4o"                        # AI model (via GitHub Models)
 max-per-hour = 3                        # Guardrail
 
