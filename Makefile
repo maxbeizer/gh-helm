@@ -1,12 +1,13 @@
 .PHONY: help check-go-version build run install-local relink-local test test-race coverage ci lint fmt tidy clean
 .DEFAULT_GOAL := help
 
+# ── Change this to your extension name (without the gh- prefix) ──
 EXTENSION_NAME ?= helm
 
 BINARY ?= bin/gh-$(EXTENSION_NAME)
 GO ?= go
 GO_MIN_MAJOR ?= 1
-GO_MIN_MINOR ?= 22
+GO_MIN_MINOR ?= 21
 GO_MIN_PATCH ?= 0
 
 check-go-version:
