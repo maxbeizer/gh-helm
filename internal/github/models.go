@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -29,6 +30,7 @@ type modelsResponse struct {
 		Message struct {
 			Content string `json:"content"`
 		} `json:"message"`
+		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
 }
 
@@ -36,7 +38,16 @@ const (
 	modelsTimeout    = 120 * time.Second
 	modelsMaxRetries = 3
 	modelsRetryDelay = 2 * time.Second
+	modelsInitialMaxTokens = 16384
 )
+
+type outputTruncatedError struct {
+	ContentLength int
+}
+
+func (e *outputTruncatedError) Error() string {
+	return fmt.Sprintf("model output truncated at %d characters — response exceeded max_tokens", e.ContentLength)
+}
 
 func GeneratePlan(ctx context.Context, model string, messages []map[string]string) (Plan, error) {
 	token, err := authToken(ctx)
@@ -44,21 +55,13 @@ func GeneratePlan(ctx context.Context, model string, messages []map[string]strin
 		return Plan{}, err
 	}
 
-	payload := map[string]any{
-		"model":      model,
-		"messages":   messages,
-		"max_tokens": 16384,
-	}
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return Plan{}, err
-	}
+	maxTokens := modelsInitialMaxTokens
 
 	var lastErr error
 	for attempt := 0; attempt < modelsMaxRetries; attempt++ {
 		if attempt > 0 {
 			delay := modelsRetryDelay * time.Duration(1<<uint(attempt-1))
-			slog.Debug("models api: retrying", "attempt", attempt+1, "delay", delay)
+			slog.Debug("models api: retrying", "attempt", attempt+1, "delay", delay, "max_tokens", maxTokens)
 			select {
 			case <-ctx.Done():
 				return Plan{}, ctx.Err()
@@ -66,11 +69,30 @@ func GeneratePlan(ctx context.Context, model string, messages []map[string]strin
 			}
 		}
 
+		payload := map[string]any{
+			"model":      model,
+			"messages":   messages,
+			"max_tokens": maxTokens,
+		}
+		body, err := json.Marshal(payload)
+		if err != nil {
+			return Plan{}, err
+		}
+
 		plan, err := doModelsRequest(ctx, token, body)
 		if err == nil {
 			return plan, nil
 		}
 		lastErr = err
+
+		// On truncation, double max_tokens and retry.
+		var truncErr *outputTruncatedError
+		if errors.As(err, &truncErr) {
+			maxTokens *= 2
+			slog.Warn("model output was truncated, retrying with more tokens",
+				"previous_length", truncErr.ContentLength, "new_max_tokens", maxTokens)
+			continue
+		}
 
 		// Don't retry on non-transient errors.
 		errMsg := err.Error()
@@ -122,6 +144,12 @@ func doModelsRequest(ctx context.Context, token string, body []byte) (Plan, erro
 	}
 	if len(apiResp.Choices) == 0 {
 		return Plan{}, fmt.Errorf("models api returned no choices")
+	}
+
+	if apiResp.Choices[0].FinishReason == "length" {
+		return Plan{}, &outputTruncatedError{
+			ContentLength: len(apiResp.Choices[0].Message.Content),
+		}
 	}
 
 	content := strings.TrimSpace(apiResp.Choices[0].Message.Content)
