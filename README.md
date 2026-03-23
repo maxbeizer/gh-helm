@@ -50,6 +50,7 @@ GitHub is the only source of truth. Every decision, every status change, every o
 
 | Doc | Description |
 |-----|-------------|
+| [**Tutorial Site**](https://maxbeizer.github.io/learn-gh-helm/) | Interactive guide — built by gh-helm itself ([repo](https://github.com/maxbeizer/learn-gh-helm)) |
 | [Project Agent](docs/project-agent.md) | Workflow, running modes, configuration |
 | [Manager Agent](docs/manager-agent.md) | Team monitoring, pillars, 1-1 observations |
 | [Configuration](docs/configuration.md) | Full `helm.toml` and `helm-manager.toml` reference |
