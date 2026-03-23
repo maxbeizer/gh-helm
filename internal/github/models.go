@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -31,6 +32,12 @@ type modelsResponse struct {
 	} `json:"choices"`
 }
 
+const (
+	modelsTimeout    = 120 * time.Second
+	modelsMaxRetries = 3
+	modelsRetryDelay = 2 * time.Second
+)
+
 func GeneratePlan(ctx context.Context, model string, messages []map[string]string) (Plan, error) {
 	token, err := authToken(ctx)
 	if err != nil {
@@ -46,6 +53,37 @@ func GeneratePlan(ctx context.Context, model string, messages []map[string]strin
 		return Plan{}, err
 	}
 
+	var lastErr error
+	for attempt := 0; attempt < modelsMaxRetries; attempt++ {
+		if attempt > 0 {
+			delay := modelsRetryDelay * time.Duration(1<<uint(attempt-1))
+			slog.Debug("models api: retrying", "attempt", attempt+1, "delay", delay)
+			select {
+			case <-ctx.Done():
+				return Plan{}, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		plan, err := doModelsRequest(ctx, token, body)
+		if err == nil {
+			return plan, nil
+		}
+		lastErr = err
+
+		// Don't retry on non-transient errors.
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "400") || strings.Contains(errMsg, "401") ||
+			strings.Contains(errMsg, "403") || strings.Contains(errMsg, "404") ||
+			strings.Contains(errMsg, "no choices") || strings.Contains(errMsg, "parse plan") {
+			return Plan{}, err
+		}
+		slog.Debug("models api: transient error", "attempt", attempt+1, "error", err)
+	}
+	return Plan{}, fmt.Errorf("models api failed after %d attempts: %w", modelsMaxRetries, lastErr)
+}
+
+func doModelsRequest(ctx context.Context, token string, body []byte) (Plan, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://models.github.ai/inference/chat/completions", bytes.NewReader(body))
 	if err != nil {
 		return Plan{}, err
@@ -53,15 +91,28 @@ func GeneratePlan(ctx context.Context, model string, messages []map[string]strin
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 60 * time.Second}
+	client := &http.Client{Timeout: modelsTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
-		return Plan{}, err
+		if ctx.Err() != nil {
+			return Plan{}, fmt.Errorf("models api request cancelled: %w", ctx.Err())
+		}
+		return Plan{}, fmt.Errorf("models api request failed (possible timeout): %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 429 {
+		return Plan{}, fmt.Errorf("models api rate limited (429) — try again later or use a different model")
+	}
+	if resp.StatusCode == 408 || resp.StatusCode == 504 {
+		return Plan{}, fmt.Errorf("models api timeout (%d) — request may be too complex", resp.StatusCode)
+	}
+	if resp.StatusCode >= 500 {
+		return Plan{}, fmt.Errorf("models api server error (%d) — retrying", resp.StatusCode)
+	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return Plan{}, fmt.Errorf("models api status %d", resp.StatusCode)
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return Plan{}, fmt.Errorf("models api error (%d): %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
 	}
 
 	var apiResp modelsResponse

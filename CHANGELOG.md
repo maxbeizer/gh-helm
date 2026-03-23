@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.2
+
+### Bug Fixes
+
+- **Models API retry with backoff** — The models API now retries up to 3 times with exponential backoff on transient errors (5xx, timeouts). Timeout increased from 60s to 120s. Specific error messages for rate limiting (429), timeouts (408/504), and server errors. Closes #27.
+- **Handle readline errors in project init** — All interactive prompts now properly check for and report read errors instead of silently accepting empty input. Closes #28.
+
 ## v0.2.1
 
 ### Bug Fixes

@@ -69,7 +69,10 @@ var projectInitCmd = &cobra.Command{
 		if noFlags {
 			reader := bufio.NewReader(os.Stdin)
 			fmt.Print("Project board number or URL: ")
-			boardText, _ := reader.ReadString('\n')
+			boardText, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("reading input: %w", err)
+			}
 			boardText = strings.TrimSpace(boardText)
 			if boardText != "" {
 				if strings.HasPrefix(boardText, "http") {
@@ -90,7 +93,10 @@ var projectInitCmd = &cobra.Command{
 
 			if owner == "" {
 				fmt.Print("Project owner: ")
-				ownerText, _ := reader.ReadString('\n')
+				ownerText, err := reader.ReadString('\n')
+				if err != nil {
+					return fmt.Errorf("reading input: %w", err)
+				}
 				owner = strings.TrimSpace(ownerText)
 			}
 
@@ -105,18 +111,27 @@ var projectInitCmd = &cobra.Command{
 			} else {
 				fmt.Print("Username: ")
 			}
-			userText, _ := reader.ReadString('\n')
+			userText, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("reading input: %w", err)
+			}
 			username = strings.TrimSpace(userText)
 			if username == "" {
 				username = defaultUser
 			}
 
 			fmt.Print("Ops channel: ")
-			opsText, _ := reader.ReadString('\n')
+			opsText, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("reading input: %w", err)
+			}
 			opsChannel = strings.TrimSpace(opsText)
 
 			fmt.Print("Source of truth path (default docs/SOURCE_OF_TRUTH.md): ")
-			sotText, _ := reader.ReadString('\n')
+			sotText, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("reading input: %w", err)
+			}
 			sotPath = strings.TrimSpace(sotText)
 		}
 
