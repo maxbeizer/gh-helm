@@ -53,10 +53,11 @@ func findCopilotAgentID(ctx context.Context, issueNodeID string) (string, error)
 query($issueId: ID!) {
   node(id: $issueId) {
     ... on Issue {
-      suggestedActors(first: 20, capabilities: [CAN_BE_ASSIGNED]) {
+      suggestedActors(first: 20) {
         nodes {
-          login
-          id
+          ... on User { login id }
+          ... on Bot { login id }
+          ... on Mannequin { login id }
         }
       }
     }
