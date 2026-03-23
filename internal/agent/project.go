@@ -269,9 +269,17 @@ var RunGitFunc = defaultRunGit
 
 func defaultRunGit(ctx context.Context, args ...string) error {
 	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if out := strings.TrimSpace(stdout.String()); out != "" {
+		slog.Debug("git stdout", "args", args, "output", out)
+	}
+	if errOut := strings.TrimSpace(stderr.String()); errOut != "" {
+		slog.Debug("git stderr", "args", args, "output", errOut)
+	}
+	return err
 }
 
 func runGit(ctx context.Context, args ...string) error {
