@@ -54,3 +54,10 @@ func (o *Output) Print(data any) error {
 	fmt.Fprintf(os.Stdout, "%+v\n", data)
 	return nil
 }
+
+// WantsJSON returns true when --json or --jq flags are set.
+func (o *Output) WantsJSON() bool {
+	jsonFlag, _ := o.cmd.Flags().GetBool("json")
+	jqExpr, _ := o.cmd.Flags().GetString("jq")
+	return jsonFlag || jqExpr != ""
+}

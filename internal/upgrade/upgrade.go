@@ -89,7 +89,18 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 			changes = append(changes, Change{Status: StatusSkipped, Message: "Config: helm.toml already up to date"})
 		}
 	} else {
-		changes = append(changes, Change{Status: StatusSkipped, Message: "Config: helm.toml not found"})
+		// Scaffold a new helm.toml with sensible defaults.
+		scaffolded := config.Config{Version: config.CurrentConfigVersion}
+		scaffolded, _ = mergeDefaults(scaffolded, true)
+		if opts.DryRun {
+			changes = append(changes, Change{Status: StatusSkipped, Message: "Config: would create helm.toml"})
+		} else {
+			if err := config.Write("helm.toml", scaffolded); err != nil {
+				return Result{}, fmt.Errorf("scaffold config: %w", err)
+			}
+			changes = append(changes, Change{Status: StatusApplied, Message: "Config: created helm.toml with defaults"})
+		}
+		cfgPtr = &scaffolded
 	}
 
 	if err := ensureDevcontainer(opts.DryRun, &changes); err != nil {

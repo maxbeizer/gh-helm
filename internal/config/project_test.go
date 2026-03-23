@@ -232,7 +232,6 @@ func TestConfigValidate(t *testing.T) {
 				Version: 1,
 				Project: ProjectConfig{Board: 0, Owner: "org"},
 			},
-			wantErr: "project.board must be greater than 0",
 		},
 		{
 			name: "board negative",
@@ -240,15 +239,22 @@ func TestConfigValidate(t *testing.T) {
 				Version: 1,
 				Project: ProjectConfig{Board: -1, Owner: "org"},
 			},
-			wantErr: "project.board must be greater than 0",
+			wantErr: "project.board must be >= 0",
 		},
 		{
-			name: "owner empty",
+			name: "owner empty without board is valid",
+			cfg: Config{
+				Version: 1,
+				Project: ProjectConfig{Board: 0, Owner: ""},
+			},
+		},
+		{
+			name: "owner empty with board set",
 			cfg: Config{
 				Version: 1,
 				Project: ProjectConfig{Board: 1, Owner: ""},
 			},
-			wantErr: "project.owner must be non-empty",
+			wantErr: "project.owner must be non-empty when project.board is set",
 		},
 		{
 			name: "negative max-per-hour",

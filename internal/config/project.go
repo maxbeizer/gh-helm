@@ -68,11 +68,12 @@ return cfg, nil
 }
 
 func (c *Config) Validate() error {
-if c.Project.Board <= 0 {
-return fmt.Errorf("project.board must be greater than 0")
+// Board and owner are optional — board integration is skipped when absent.
+if c.Project.Board < 0 {
+return fmt.Errorf("project.board must be >= 0")
 }
-if c.Project.Owner == "" {
-return fmt.Errorf("project.owner must be non-empty")
+if c.Project.Board > 0 && c.Project.Owner == "" {
+return fmt.Errorf("project.owner must be non-empty when project.board is set")
 }
 if c.Agent.MaxPerHour < 0 {
 return fmt.Errorf("agent.max-per-hour must be >= 0")

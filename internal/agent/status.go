@@ -13,7 +13,7 @@ import (
 
 type State struct {
 	Session      string      `json:"session"`
-	LastActivity time.Time   `json:"last_activity"`
+	LastActivity time.Time   `json:"last_activity,omitempty"`
 	IssuesWorked []IssueInfo `json:"issues_worked"`
 	PullsCreated []PullInfo  `json:"pulls_created"`
 }
