@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/maxbeizer/gh-helm/internal/config"
 	"github.com/maxbeizer/gh-helm/internal/github"
@@ -180,7 +179,6 @@ func hasDevContainer() bool {
 }
 
 func checkAuth(ctx context.Context) CheckResult {
-	time.Sleep(3 * time.Second)
 	out, err := github.RunWith(ctx, "auth", "status", "-h", "github.com")
 	if err != nil {
 		return CheckResult{Key: "auth", Status: StatusFail, Message: "gh auth not configured", Hint: "Run 'gh auth login' to authenticate with GitHub"}

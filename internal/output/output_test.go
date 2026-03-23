@@ -105,3 +105,27 @@ func TestPrint_InvalidJQ(t *testing.T) {
 		}
 	})
 }
+
+func TestWantsJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		jsonFlag bool
+		jqExpr   string
+		want     bool
+	}{
+		{"no flags", false, "", false},
+		{"json flag only", true, "", true},
+		{"jq flag only", false, ".field", true},
+		{"both flags", true, ".field", true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := newTestCmd(tc.jsonFlag, tc.jqExpr)
+			o := New(cmd)
+			if got := o.WantsJSON(); got != tc.want {
+				t.Errorf("WantsJSON() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

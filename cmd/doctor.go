@@ -33,7 +33,7 @@ var doctorCmd = &cobra.Command{
 		fmt.Fprintln(cmd.OutOrStdout(), "")
 		fmt.Fprintf(cmd.OutOrStdout(), "  Result: %d passed, %d warnings, %d failures\n", result.Summary.Passed, result.Summary.Warnings, result.Summary.Failures)
 		if result.Summary.Warnings > 0 {
-			fmt.Fprintln(cmd.OutOrStdout(), "  Run 'gh-helm upgrade' to fix warnings automatically.")
+			fmt.Fprintln(cmd.OutOrStdout(), "  Run 'gh helm doctor --fix' to fix warnings automatically.")
 		}
 		return nil
 	},

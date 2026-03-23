@@ -101,7 +101,7 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 	}
 
 	branch := fmt.Sprintf("gh-helm/%d-%s", opts.IssueNumber, slugify(issue.Title))
-	if err := runCmd(ctx, "git", "checkout", "-b", branch); err != nil {
+	if err := runGit(ctx, "checkout", "-b", branch); err != nil {
 		return StartResult{}, err
 	}
 
@@ -113,10 +113,10 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 	if err := stageFiles(ctx, plan.Files); err != nil {
 		return StartResult{}, err
 	}
-	if err := runCmd(ctx, "git", "commit", "-m", commitMsg); err != nil {
+	if err := runGit(ctx, "commit", "-m", commitMsg); err != nil {
 		return StartResult{}, err
 	}
-	if err := runCmd(ctx, "git", "push", "-u", "origin", branch); err != nil {
+	if err := runGit(ctx, "push", "-u", "origin", branch); err != nil {
 		return StartResult{}, err
 	}
 
@@ -253,7 +253,7 @@ func defaultRunGit(ctx context.Context, args ...string) error {
 	return cmd.Run()
 }
 
-func runCmd(ctx context.Context, name string, args ...string) error {
+func runGit(ctx context.Context, args ...string) error {
 	return RunGitFunc(ctx, args...)
 }
 

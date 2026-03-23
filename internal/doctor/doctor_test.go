@@ -210,11 +210,7 @@ func TestCheckAuth(t *testing.T) {
 			withMockGh(t, func(_ context.Context, args ...string) ([]byte, error) {
 				return []byte(tc.output), tc.err
 			})
-			// Override sleep by keeping checkAuth fast in tests; we can't
-			// avoid the 3s sleep in checkAuth without refactoring. Instead
-			// we test the parseAuth helper indirectly through checkAuth.
-			// For unit-test speed, we call the function directly accepting
-			// the sleep cost — but in CI this is acceptable.
+			// Test checkAuth with mocked gh CLI output.
 			got := checkAuth(context.Background())
 			if got.Status != tc.wantStatus {
 				t.Errorf("status = %q, want %q", got.Status, tc.wantStatus)
