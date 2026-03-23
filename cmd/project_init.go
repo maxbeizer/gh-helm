@@ -127,6 +127,47 @@ var projectInitCmd = &cobra.Command{
 			}
 			opsChannel = strings.TrimSpace(opsText)
 
+			fmt.Println()
+			fmt.Println("Choose an AI model:")
+			fmt.Println()
+			fmt.Println("  1. gpt-4.1       (default) Fast, reliable, good for most tasks")
+			fmt.Println("  2. gpt-5                    Higher quality, best overall balance")
+			fmt.Println("  3. o3                        Best quality, slowest, complex code")
+			fmt.Println("  4. deepseek-r1               Strong at code, good alternative")
+			fmt.Println("  5. Other                     Enter a custom model name")
+			fmt.Println()
+			fmt.Println("  See all models: https://github.com/marketplace/models")
+			fmt.Println()
+			fmt.Print("Model [1]: ")
+			modelText, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("reading input: %w", err)
+			}
+			modelChoice := strings.TrimSpace(modelText)
+			switch modelChoice {
+			case "", "1":
+				model = "gpt-4.1"
+			case "2":
+				model = "gpt-5"
+			case "3":
+				model = "o3"
+			case "4":
+				model = "deepseek-r1"
+			case "5":
+				fmt.Print("Model name: ")
+				customModel, err := reader.ReadString('\n')
+				if err != nil {
+					return fmt.Errorf("reading input: %w", err)
+				}
+				model = strings.TrimSpace(customModel)
+				if model == "" {
+					model = "gpt-4.1"
+				}
+			default:
+				// Treat raw input as a model name.
+				model = modelChoice
+			}
+
 			fmt.Print("Source of truth path (default docs/SOURCE_OF_TRUTH.md): ")
 			sotText, err := reader.ReadString('\n')
 			if err != nil {
