@@ -39,7 +39,7 @@ type StartResult struct {
 	CodespaceURL  string       `json:"codespace_url,omitempty"`
 }
 
-const delegateAssignee = "copilot"
+const delegateAssignee = "copilot-swe-agent"
 
 type PullRequest struct {
 	Number int    `json:"number"`
@@ -251,13 +251,9 @@ func (p *ProjectAgent) delegate(ctx context.Context, opts StartOptions, cfg conf
 		return StartResult{}, fmt.Errorf("post context comment: %w", err)
 	}
 
-	// Assign to Copilot.
-	assignArgs := []string{"issue", "edit", fmt.Sprintf("%d", opts.IssueNumber), "--add-assignee", delegateAssignee}
-	if opts.Repo != "" {
-		assignArgs = append(assignArgs, "--repo", opts.Repo)
-	}
-	if _, err := github.RunWith(ctx, assignArgs...); err != nil {
-		return StartResult{}, fmt.Errorf("assign to %s: %w", delegateAssignee, err)
+	// Assign to Copilot coding agent.
+	if err := github.AssignCopilot(ctx, issue.NodeID); err != nil {
+		return StartResult{}, fmt.Errorf("assign to Copilot: %w", err)
 	}
 
 	// Notify.
