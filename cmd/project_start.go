@@ -54,6 +54,8 @@ func printStartResult(r agent.StartResult) {
 		for _, f := range r.Plan.Files {
 			fmt.Fprintf(os.Stdout, "           %s %s\n", f.Action, f.Path)
 		}
+		fmt.Fprintln(os.Stdout)
+		fmt.Fprintf(os.Stdout, "  Next: run without --dry-run to create the PR\n")
 		return
 	}
 
@@ -69,6 +71,8 @@ func printStartResult(r agent.StartResult) {
 	if r.CodespaceURL != "" {
 		fmt.Fprintf(os.Stdout, "  Codespace: %s\n", r.CodespaceURL)
 	}
+	fmt.Fprintln(os.Stdout)
+	fmt.Fprintf(os.Stdout, "  Next: review the PR, then merge with 'gh pr merge %d --squash'\n", r.Pull.Number)
 }
 
 func init() {
