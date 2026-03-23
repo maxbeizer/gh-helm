@@ -68,7 +68,7 @@ var projectInitCmd = &cobra.Command{
 
 		if noFlags {
 			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Project board number or URL: ")
+			fmt.Print("Project board number or URL (blank to create one): ")
 			boardText, err := reader.ReadString('\n')
 			if err != nil {
 				return fmt.Errorf("reading input: %w", err)
@@ -92,12 +92,43 @@ var projectInitCmd = &cobra.Command{
 			}
 
 			if owner == "" {
-				fmt.Print("Project owner: ")
+				defaultOwner := ""
+				if user, err := github.CurrentUser(cmd.Context()); err == nil {
+					defaultOwner = user
+				}
+				if defaultOwner != "" {
+					fmt.Printf("Project owner (default %s): ", defaultOwner)
+				} else {
+					fmt.Print("Project owner: ")
+				}
 				ownerText, err := reader.ReadString('\n')
 				if err != nil {
 					return fmt.Errorf("reading input: %w", err)
 				}
 				owner = strings.TrimSpace(ownerText)
+				if owner == "" {
+					owner = defaultOwner
+				}
+			}
+
+			// Create a new board if none was provided.
+			if board == 0 && owner != "" {
+				repoName := ""
+				if r, err := github.CurrentRepo(cmd.Context()); err == nil {
+					repoName = r
+				}
+				title := repoName
+				if title == "" {
+					title = "gh-helm project"
+				}
+				fmt.Fprintf(os.Stdout, "  Creating project board %q for %s...\n", title, owner)
+				result, err := github.CreateProject(cmd.Context(), owner, title)
+				if err != nil {
+					return fmt.Errorf("create project board: %w", err)
+				}
+				board = result.Number
+				fmt.Fprintf(os.Stdout, "  ✅ Created: %s\n", result.URL)
+				fmt.Fprintf(os.Stdout, "  Statuses: Ready, In Progress, In Review, Done\n\n")
 			}
 
 			defaultUser := ""
