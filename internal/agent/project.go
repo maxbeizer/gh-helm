@@ -101,6 +101,9 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 	}
 
 	branch := fmt.Sprintf("gh-helm/%d-%s", opts.IssueNumber, slugify(issue.Title))
+	if branchExists(ctx, branch) {
+		return StartResult{}, fmt.Errorf("branch %q already exists — work on issue #%d may already be in progress. Use 'git branch -D %s' to reset if needed", branch, opts.IssueNumber, branch)
+	}
 	if err := runGit(ctx, "checkout", "-b", branch); err != nil {
 		return StartResult{}, err
 	}
@@ -255,6 +258,12 @@ func defaultRunGit(ctx context.Context, args ...string) error {
 
 func runGit(ctx context.Context, args ...string) error {
 	return RunGitFunc(ctx, args...)
+}
+
+// branchExists checks whether a local git branch already exists.
+func branchExists(ctx context.Context, branch string) bool {
+	err := RunGitFunc(ctx, "rev-parse", "--verify", branch)
+	return err == nil
 }
 
 func slugify(input string) string {
