@@ -109,9 +109,14 @@ func figureOutNext(ctx context.Context) nextResult {
 				Command: fmt.Sprintf("gh helm project start --issue %d", item.Number),
 			})
 			if len(ready) > 1 {
+				remaining := len(ready) - 1
+				noun := "issues"
+				if remaining == 1 {
+					noun = "issue"
+				}
 				steps = append(steps, nextAction{
 					Action: "info",
-					Detail: fmt.Sprintf("%d more issues ready on the board", len(ready)-1),
+					Detail: fmt.Sprintf("%d more %s ready on the board", remaining, noun),
 				})
 			}
 		}
