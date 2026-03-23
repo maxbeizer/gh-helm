@@ -248,7 +248,12 @@ query($owner: String!, $number: Int!, $after: String) {
 	}
 
 	if itemID == "" {
-		return fmt.Errorf("issue (node %s) is not on project board %d — add it to the board first", issueNodeID, projectNumber)
+		slog.Debug("issue not on board, adding it", "issueNodeID", issueNodeID, "project", projectNumber)
+		addedItemID, err := addIssueToProject(ctx, projectID, issueNodeID)
+		if err != nil {
+			return fmt.Errorf("auto-add issue to project %d: %w", projectNumber, err)
+		}
+		itemID = addedItemID
 	}
 
 	slog.Debug("updating project item status",
@@ -275,4 +280,43 @@ mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
 	}
 	slog.Debug("status updated successfully", "status", status)
 	return nil
+}
+
+func addIssueToProject(ctx context.Context, projectID, issueNodeID string) (string, error) {
+	mutation := `
+mutation($projectId: ID!, $contentId: ID!) {
+  addProjectV2ItemById(input: {
+    projectId: $projectId,
+    contentId: $contentId
+  }) {
+    item { id }
+  }
+}`
+	out, err := runGh(ctx, "api", "graphql", "-f", "query="+mutation,
+		"-F", "projectId="+projectID, "-F", "contentId="+issueNodeID)
+	if err != nil {
+		return "", fmt.Errorf("add issue to project: %w", err)
+	}
+
+	var resp struct {
+		AddProjectV2ItemById struct {
+			Item struct {
+				ID string `json:"id"`
+			} `json:"item"`
+		} `json:"addProjectV2ItemById"`
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(out, &raw); err != nil {
+		return "", err
+	}
+	payload := out
+	if dataRaw, ok := raw["data"]; ok {
+		payload = dataRaw
+	}
+	if err := json.Unmarshal(payload, &resp); err != nil {
+		return "", err
+	}
+	itemID := resp.AddProjectV2ItemById.Item.ID
+	slog.Debug("added issue to project", "itemID", itemID)
+	return itemID, nil
 }
