@@ -14,9 +14,10 @@ import (
 )
 
 type nextAction struct {
-	Action  string `json:"action"`
-	Detail  string `json:"detail"`
-	Command string `json:"command,omitempty"`
+	Action   string   `json:"action"`
+	Detail   string   `json:"detail"`
+	Command  string   `json:"command,omitempty"`
+	Commands []string `json:"commands,omitempty"`
 }
 
 type nextResult struct {
@@ -42,7 +43,11 @@ var nextCmd = &cobra.Command{
 		}
 		for i, step := range result.Steps {
 			fmt.Fprintf(os.Stdout, "  %d. %s\n", i+1, step.Detail)
-			if step.Command != "" {
+			if len(step.Commands) > 0 {
+				for _, c := range step.Commands {
+					fmt.Fprintf(os.Stdout, "     → %s\n", c)
+				}
+			} else if step.Command != "" {
 				fmt.Fprintf(os.Stdout, "     → %s\n", step.Command)
 			}
 		}
@@ -72,35 +77,31 @@ func figureOutNext(ctx context.Context) nextResult {
 		prs := findHelmPRs(ctx, repo)
 		for _, pr := range prs {
 			steps = append(steps, nextAction{
-				Action:  "review",
-				Detail:  fmt.Sprintf("Review and merge PR #%d: %s", pr.Number, pr.Title),
-				Command: fmt.Sprintf("gh pr merge %d --squash", pr.Number),
+				Action: "review",
+				Detail: fmt.Sprintf("Review and merge PR #%d: %s", pr.Number, pr.Title),
+				Commands: []string{
+					fmt.Sprintf("gh pr view -w %d", pr.Number),
+					fmt.Sprintf("gh pr merge %d --squash", pr.Number),
+				},
 			})
 		}
 	}
 
-	// Check project board for in-progress and ready items.
+	// Check project board for actionable items.
 	if cfg.Project.Board != 0 && cfg.Project.Owner != "" {
 		inProgress, ready := boardState(ctx, cfg)
 
+		// Flag stale in-progress items (issue already closed but board not updated).
 		for _, item := range inProgress {
-			// Only flag if there's no open PR for it already.
-			hasPR := false
-			for _, step := range steps {
-				if step.Action == "review" {
-					hasPR = true
-					break
-				}
-			}
-			if !hasPR {
+			if repo != "" && isIssueClosed(ctx, repo, item.Number) {
 				steps = append(steps, nextAction{
-					Action: "check",
-					Detail: fmt.Sprintf("Issue #%d is in progress but has no PR: %s", item.Number, item.Title),
+					Action: "cleanup",
+					Detail: fmt.Sprintf("Issue #%d is closed but still 'In Progress' on the board: %s", item.Number, item.Title),
 				})
 			}
 		}
 
-		if len(steps) == 0 && len(ready) > 0 {
+		if len(ready) > 0 {
 			item := ready[0]
 			steps = append(steps, nextAction{
 				Action:  "start",
@@ -165,43 +166,48 @@ type boardItem struct {
 }
 
 func boardState(ctx context.Context, cfg config.Config) (inProgress, ready []boardItem) {
-	for _, status := range []string{"In Progress", "Ready"} {
-		out, err := github.RunWith(ctx, "project", "item-list", fmt.Sprintf("%d", cfg.Project.Board),
-			"--owner", cfg.Project.Owner, "--format", "json")
-		if err != nil {
+	out, err := github.RunWith(ctx, "project", "item-list", fmt.Sprintf("%d", cfg.Project.Board),
+		"--owner", cfg.Project.Owner, "--format", "json")
+	if err != nil {
+		return
+	}
+
+	var resp struct {
+		Items []struct {
+			Title  string `json:"title"`
+			Status string `json:"status"`
+			Content struct {
+				Number int    `json:"number"`
+				Type   string `json:"type"`
+			} `json:"content"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(out, &resp); err != nil {
+		return
+	}
+
+	for _, item := range resp.Items {
+		if item.Content.Type != "Issue" {
 			continue
 		}
-
-		var resp struct {
-			Items []struct {
-				Title  string `json:"title"`
-				Status string `json:"status"`
-				Content struct {
-					Number int    `json:"number"`
-					Type   string `json:"type"`
-				} `json:"content"`
-			} `json:"items"`
+		bi := boardItem{Number: item.Content.Number, Title: item.Title}
+		switch item.Status {
+		case "In Progress":
+			inProgress = append(inProgress, bi)
+		case "Ready", "Todo", "":
+			ready = append(ready, bi)
 		}
-		if err := json.Unmarshal(out, &resp); err != nil {
-			continue
-		}
-
-		for _, item := range resp.Items {
-			if item.Content.Type != "Issue" {
-				continue
-			}
-			if item.Status == status {
-				bi := boardItem{Number: item.Content.Number, Title: item.Title}
-				if status == "In Progress" {
-					inProgress = append(inProgress, bi)
-				} else {
-					ready = append(ready, bi)
-				}
-			}
-		}
-		break // Only need one API call — we check both statuses from the same response.
 	}
 	return
+}
+
+func isIssueClosed(ctx context.Context, repo string, number int) bool {
+	out, err := github.RunWith(ctx, "issue", "view", fmt.Sprintf("%d", number),
+		"--repo", repo, "--json", "state", "--jq", ".state")
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(out)) == "CLOSED"
 }
 
 func init() {
