@@ -122,6 +122,30 @@ func figureOutNext(ctx context.Context) nextResult {
 		}
 	}
 
+	// If no steps yet, check for open issues not on the board.
+	if len(steps) == 0 && repo != "" {
+		untracked := findUntrackedIssues(ctx, repo)
+		if len(untracked) > 0 {
+			item := untracked[0]
+			steps = append(steps, nextAction{
+				Action:  "start",
+				Detail:  fmt.Sprintf("Start open issue: #%d %s", item.Number, item.Title),
+				Command: fmt.Sprintf("gh helm project start --issue %d", item.Number),
+			})
+			if len(untracked) > 1 {
+				remaining := len(untracked) - 1
+				noun := "issue"
+				if remaining > 1 {
+					noun = "issues"
+				}
+				steps = append(steps, nextAction{
+					Action: "info",
+					Detail: fmt.Sprintf("%d more open %s in the repo", remaining, noun),
+				})
+			}
+		}
+	}
+
 	return nextResult{Steps: steps}
 }
 
@@ -213,6 +237,26 @@ func isIssueClosed(ctx context.Context, repo string, number int) bool {
 		return false
 	}
 	return strings.TrimSpace(string(out)) == "CLOSED"
+}
+
+type untrackedIssue struct {
+	Number int
+	Title  string
+}
+
+func findUntrackedIssues(ctx context.Context, repo string) []untrackedIssue {
+	out, err := github.RunWith(ctx, "issue", "list",
+		"--repo", repo, "--state", "open",
+		"--json", "number,title",
+		"--limit", "10")
+	if err != nil {
+		return nil
+	}
+	var issues []untrackedIssue
+	if err := json.Unmarshal(out, &issues); err != nil {
+		return nil
+	}
+	return issues
 }
 
 func init() {
