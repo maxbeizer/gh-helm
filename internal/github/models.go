@@ -98,9 +98,11 @@ func GeneratePlan(ctx context.Context, model string, messages []map[string]strin
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "400") || strings.Contains(errMsg, "401") ||
 			strings.Contains(errMsg, "403") || strings.Contains(errMsg, "404") ||
-			strings.Contains(errMsg, "no choices") || strings.Contains(errMsg, "parse plan") {
+			strings.Contains(errMsg, "no choices") {
 			return Plan{}, err
 		}
+		// Parse errors and malformed JSON are transient — the model may
+		// produce valid output on retry.
 		slog.Debug("models api: transient error", "attempt", attempt+1, "error", err)
 	}
 	return Plan{}, fmt.Errorf("models api failed after %d attempts: %w", modelsMaxRetries, lastErr)
