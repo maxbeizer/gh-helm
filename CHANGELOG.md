@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.1
+
+### Bug Fixes
+
+- **Removed 3-second sleep from `doctor` auth check** — `gh helm doctor` is now ~27 seconds faster.
+- **Fixed `runCmd` ignoring `name` parameter** — Renamed to `runGit` and removed the unused parameter. Closes #25.
+- **Fixed doctor hint text** — Now correctly says `gh helm doctor --fix` instead of `gh-helm upgrade`.
+
+### Improvements
+
+- **Added `WantsJSON()` tests** — Output package now has full test coverage for JSON detection.
+
 ## v0.2.0
 
 ### Improvements
