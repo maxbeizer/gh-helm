@@ -24,18 +24,22 @@ type StartOptions struct {
 	Model       string
 	DryRun      bool
 	Codespace   bool
+	Delegate    bool
 }
 
 type StartResult struct {
 	Session       string       `json:"session"`
 	Issue         github.Issue `json:"issue"`
-	Plan          github.Plan  `json:"plan"`
-	Branch        string       `json:"branch"`
-	Pull          PullRequest  `json:"pull_request"`
-	DryRun        bool         `json:"dry_run"`
+	Plan          github.Plan  `json:"plan,omitempty"`
+	Branch        string       `json:"branch,omitempty"`
+	Pull          PullRequest  `json:"pull_request,omitempty"`
+	DryRun        bool         `json:"dry_run,omitempty"`
+	Delegated     bool         `json:"delegated,omitempty"`
 	CodespaceName string       `json:"codespace_name,omitempty"`
 	CodespaceURL  string       `json:"codespace_url,omitempty"`
 }
+
+const delegateAssignee = "copilot"
 
 type PullRequest struct {
 	Number int    `json:"number"`
@@ -82,6 +86,12 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 	sotContent, err := sot.Read(cfg.SourceOfTruth)
 	if err != nil {
 		return StartResult{}, err
+	}
+
+	// Delegate mode: enrich the issue and assign to Copilot.
+	delegate := opts.Delegate || cfg.Agent.Mode == "delegate"
+	if delegate {
+		return p.delegate(ctx, opts, cfg, issue, session, sotContent)
 	}
 
 	plan, err := GeneratePlan(ctx, model, issue, sotContent)
@@ -232,6 +242,41 @@ func applyChanges(files []github.FileChange) error {
 		}
 	}
 	return nil
+}
+
+func (p *ProjectAgent) delegate(ctx context.Context, opts StartOptions, cfg config.Config, issue github.Issue, session, sotContent string) (StartResult, error) {
+	// Build and post context comment.
+	comment := BuildContextComment(ctx, sotContent)
+	if err := github.CommentIssue(ctx, opts.Repo, opts.IssueNumber, comment); err != nil {
+		return StartResult{}, fmt.Errorf("post context comment: %w", err)
+	}
+
+	// Assign to Copilot.
+	assignArgs := []string{"issue", "edit", fmt.Sprintf("%d", opts.IssueNumber), "--add-assignee", delegateAssignee}
+	if opts.Repo != "" {
+		assignArgs = append(assignArgs, "--repo", opts.Repo)
+	}
+	if _, err := github.RunWith(ctx, assignArgs...); err != nil {
+		return StartResult{}, fmt.Errorf("assign to %s: %w", delegateAssignee, err)
+	}
+
+	// Notify.
+	notifier := notifications.New(cfg, opts.Repo, opts.IssueNumber)
+	if notifier != nil {
+		if err := notifier.Notify(ctx, notifications.Message{
+			Title:   "🤖 gh-helm: delegated to Copilot",
+			Body:    fmt.Sprintf("Issue #%d: %s\nAssigned to @%s with project context", opts.IssueNumber, issue.Title, delegateAssignee),
+			Channel: cfg.Notifications.OpsChannel,
+		}); err != nil {
+			slog.Warn("notification failed", "error", err)
+		}
+	}
+
+	return StartResult{
+		Session:   session,
+		Issue:     issue,
+		Delegated: true,
+	}, nil
 }
 
 func createDraftPR(ctx context.Context, repo, title, body string) (int, string, error) {

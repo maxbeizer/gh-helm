@@ -71,6 +71,12 @@ func RunDaemon(ctx context.Context, cfg config.ProjectConfig, opts DaemonOpts) e
 	if opts.Logger != nil {
 		logf = func(format string, args ...any) { opts.Logger.Info(fmt.Sprintf(format, args...)) }
 	}
+
+	// Check if delegate mode is active and warn.
+	if helmCfg, err := config.Load("helm.toml"); err == nil && helmCfg.Agent.Mode == "delegate" {
+		logf("delegate mode: will assign issues to @copilot automatically (max %d/hour)", maxPerHour)
+	}
+
 	logf("project daemon started (interval: %s)", interval)
 
 	for {

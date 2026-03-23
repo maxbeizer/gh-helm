@@ -11,6 +11,7 @@ owner = "myorg"                     # Project/org owner
 [agent]
 user = "octocat"                    # Developer running the agent
 model = "gpt-4.1"                    # AI model (via GitHub Models API)
+mode = "direct"                     # "direct" (generate code) or "delegate" (assign to Copilot)
 max-per-hour = 3                    # Max issues claimed per rolling hour
 
 [notifications]

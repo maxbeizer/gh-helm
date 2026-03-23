@@ -27,6 +27,7 @@ Owner string `toml:"owner"`
 type AgentConfig struct {
 User       string `toml:"user"`
 Model      string `toml:"model"`
+Mode       string `toml:"mode"`
 MaxPerHour int    `toml:"max-per-hour"`
 }
 
@@ -77,6 +78,11 @@ return fmt.Errorf("project.owner must be non-empty when project.board is set")
 }
 if c.Agent.MaxPerHour < 0 {
 return fmt.Errorf("agent.max-per-hour must be >= 0")
+}
+switch c.Agent.Mode {
+case "", "direct", "delegate":
+default:
+return fmt.Errorf("agent.mode must be one of: \"\", \"direct\", \"delegate\"")
 }
 switch c.Notifications.Channel {
 case "", "slack", "github":
