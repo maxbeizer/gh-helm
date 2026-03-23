@@ -94,12 +94,20 @@ cfg := Config{Version: CurrentConfigVersion}
 return Write(path, cfg)
 }
 
+const configHeader = `# gh-helm configuration
+# See available AI models at: https://github.com/marketplace/models
+
+`
+
 func Write(path string, cfg Config) error {
 f, err := os.Create(path)
 if err != nil {
 return fmt.Errorf("create config file: %w", err)
 }
 defer f.Close()
+if _, err := f.WriteString(configHeader); err != nil {
+return fmt.Errorf("write config header: %w", err)
+}
 enc := toml.NewEncoder(f)
 return enc.Encode(cfg)
 }

@@ -1,5 +1,6 @@
 # helm.toml — Project Agent configuration
 # Place this in the root of your project repo.
+# See available AI models at: https://github.com/marketplace/models
 
 version = 1
 
