@@ -75,7 +75,7 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 
 	if cfg.Project.Board != 0 && cfg.Project.Owner != "" {
 		if err := github.MoveIssueToStatus(ctx, cfg.Project.Owner, cfg.Project.Board, issue.NodeID, "In Progress"); err != nil {
-			return StartResult{}, err
+			slog.Warn("could not move issue to In Progress (continuing)", "error", err)
 		}
 	}
 
@@ -133,7 +133,7 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 
 	if cfg.Project.Board != 0 && cfg.Project.Owner != "" {
 		if err := github.MoveIssueToStatus(ctx, cfg.Project.Owner, cfg.Project.Board, issue.NodeID, "In Review"); err != nil {
-			return StartResult{}, err
+			slog.Warn("could not move issue to In Review (continuing)", "error", err)
 		}
 	}
 

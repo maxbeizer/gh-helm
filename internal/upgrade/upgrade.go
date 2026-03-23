@@ -10,6 +10,7 @@ import (
 	"github.com/maxbeizer/gh-helm/internal/config"
 	"github.com/maxbeizer/gh-helm/internal/github"
 	"github.com/BurntSushi/toml"
+	"log/slog"
 )
 
 type ChangeStatus string
@@ -109,6 +110,10 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 	if err := ensureSourceOfTruth(cfgPtr, opts.DryRun, &changes); err != nil {
 		return Result{}, fmt.Errorf("ensure source of truth: %w", err)
+	}
+
+	if err := ensureBoardStatuses(ctx, cfgPtr, opts.DryRun, &changes); err != nil {
+		return Result{}, fmt.Errorf("ensure board statuses: %w", err)
 	}
 
 	if err := ensureStateDir(opts.DryRun, &changes); err != nil {
@@ -277,3 +282,50 @@ const sourceOfTruthTemplate = `# Source of Truth
 
 ## Next Up
 `
+
+var requiredStatuses = []string{"Ready", "In Progress", "In Review", "Done"}
+
+func ensureBoardStatuses(ctx context.Context, cfg *config.Config, dryRun bool, changes *[]Change) error {
+	if cfg == nil || cfg.Project.Board == 0 || cfg.Project.Owner == "" {
+		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Board statuses: no project board configured"})
+		return nil
+	}
+
+	existing, projectID, fieldID, err := github.FetchBoardStatuses(ctx, cfg.Project.Owner, cfg.Project.Board)
+	if err != nil {
+		slog.Warn("could not fetch board statuses", "error", err)
+		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Board statuses: could not fetch board"})
+		return nil
+	}
+
+	existingSet := map[string]bool{}
+	for _, s := range existing {
+		existingSet[s] = true
+	}
+
+	var missing []string
+	for _, s := range requiredStatuses {
+		if !existingSet[s] {
+			missing = append(missing, s)
+		}
+	}
+
+	if len(missing) == 0 {
+		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Board statuses: all required statuses present"})
+		return nil
+	}
+
+	if dryRun {
+		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Board statuses: would add " + strings.Join(missing, ", ")})
+		return nil
+	}
+
+	if err := github.AddBoardStatuses(ctx, projectID, fieldID, existing, missing); err != nil {
+		slog.Warn("could not add board statuses", "error", err)
+		*changes = append(*changes, Change{Status: StatusSkipped, Message: "Board statuses: failed to add — " + err.Error()})
+		return nil
+	}
+
+	*changes = append(*changes, Change{Status: StatusApplied, Message: "Board statuses: added " + strings.Join(missing, ", ")})
+	return nil
+}
