@@ -45,8 +45,9 @@ func GeneratePlan(ctx context.Context, model string, messages []map[string]strin
 	}
 
 	payload := map[string]any{
-		"model":    model,
-		"messages": messages,
+		"model":      model,
+		"messages":   messages,
+		"max_tokens": 16384,
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {

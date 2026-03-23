@@ -26,8 +26,8 @@ func TestMergeDefaults(t *testing.T) {
 			wantChanged:        true,
 			check: func(t *testing.T, cfg config.Config) {
 				t.Helper()
-				if cfg.Agent.Model != "gpt-4o" {
-					t.Errorf("Model = %q, want %q", cfg.Agent.Model, "gpt-4o")
+				if cfg.Agent.Model != "gpt-4.1" {
+					t.Errorf("Model = %q, want %q", cfg.Agent.Model, "gpt-4.1")
 				}
 				if cfg.Agent.MaxPerHour != 3 {
 					t.Errorf("MaxPerHour = %d, want 3", cfg.Agent.MaxPerHour)

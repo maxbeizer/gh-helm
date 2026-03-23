@@ -59,7 +59,7 @@ func (p *ProjectAgent) Start(ctx context.Context, opts StartOptions) (StartResul
 		model = cfg.Agent.Model
 	}
 	if model == "" {
-		model = "gpt-4o"
+		model = "gpt-4.1"
 	}
 
 	session := strconv.FormatInt(time.Now().Unix(), 10)

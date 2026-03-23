@@ -148,7 +148,7 @@ var projectInitCmd = &cobra.Command{
 		}
 
 		if model == "" {
-			model = "gpt-4o"
+			model = "gpt-4.1"
 		}
 		if channel == "" {
 			channel = "slack"
@@ -191,7 +191,7 @@ func init() {
 	projectInitCmd.Flags().String("owner", "", "Project owner")
 	projectInitCmd.Flags().String("board-url", "", "Project board URL (e.g. https://github.com/users/octocat/projects/1)")
 	projectInitCmd.Flags().String("user", "", "Developer username")
-	projectInitCmd.Flags().String("model", "", "AI model (default gpt-4o)")
+	projectInitCmd.Flags().String("model", "", "AI model (default gpt-4.1)")
 	projectInitCmd.Flags().Int("max-per-hour", 0, "Rate limit for agent actions")
 	projectInitCmd.Flags().String("channel", "", "Notification channel (default slack)")
 	projectInitCmd.Flags().String("ops-channel", "", "Slack ops channel")

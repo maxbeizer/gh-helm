@@ -10,7 +10,7 @@ owner = "myorg"                     # Project/org owner
 
 [agent]
 user = "octocat"                    # Developer running the agent
-model = "gpt-4o"                    # AI model (via GitHub Models API)
+model = "gpt-4.1"                    # AI model (via GitHub Models API)
 max-per-hour = 3                    # Max issues claimed per rolling hour
 
 [notifications]

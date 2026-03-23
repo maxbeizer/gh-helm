@@ -134,7 +134,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 func mergeDefaults(cfg config.Config, sourceOfTruthMissing bool) (config.Config, bool) {
 	changed := false
 	if cfg.Agent.Model == "" {
-		cfg.Agent.Model = "gpt-4o"
+		cfg.Agent.Model = "gpt-4.1"
 		changed = true
 	}
 	if cfg.Agent.MaxPerHour == 0 {
